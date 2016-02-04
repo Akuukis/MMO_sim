@@ -23,6 +23,16 @@ def generateMoonName():
     names = ["Stellar", "Forge", "Sol", "Indeae", "Caseopae", "Alpha", "Centauris", "HTC", "Eagle"]
     return random.choice(names) + " " + random.choice(names)
 
+def post(url, payload, msg=None, errorMsg=None):
+    r = requests.post(url, json=payload, auth=(username, password))
+    if not r.json()['error']:
+        if msg:
+            print(msg)
+    else:
+        pp(r.json())
+        if errorMsg:
+            print(errorMsg)
+
 universe = {}
 universe["starsystems"]= []
 number_of_max_stars = 10
@@ -77,46 +87,23 @@ for starsystemid in range (1, 1000):
 
 # Insert data in database
 for starsystem in universe["starsystems"]:
-    # prepare copy of dict, as we want to remove childs
-    preparestarsystem = copy.deepcopy(starsystem)
+    preparestarsystem = copy.deepcopy(starsystem)  # prepare copy of dict, as we want to remove childs
     del preparestarsystem["childs"]
     urlid = "[" + 'y' + str(starsystem["id"]) + "]"
-    r = requests.post(url + urlid, json=preparestarsystem, auth=(username, password))
-    if r.json()['error']:
-        pp(r.json())
-    else:
-        print('System ' + urlid)
+    post(url + urlid, preparestarsystem, 'System ' + urlid)
 
     for star in starsystem["childs"]:
-        # insert star
-        # prepare copy of dict, as we want to remove childs
         preparestar = copy.deepcopy(star)
         del preparestar["childs"]
         urlid = "[" + 'y' + str(starsystem["id"]) + 's' + str(star["id"]) + "]"
-        r = requests.post(url + urlid, json=preparestar, auth=(username, password))
-        if r.json()['error']:
-            pp(r.json())
-        else:
-            print('  Star ' + urlid)
+        post(url + urlid, preparestar, '  Star ' + urlid)
 
         for planet in star["childs"]:
-            # insert planet
-            # prepare copy of dict, as we want to remove childs
             prepareplanet = copy.deepcopy(planet)
             del prepareplanet["childs"]
             urlid = "[" + 'y' + str(starsystem["id"]) + 's' + str(star["id"]) + 'p' + str(planet["id"]) + "]"
-            r = requests.post(url + urlid, json=preparestar, auth=(username, password))
-            if r.json()['error']:
-                pp(r.json())
-            else:
-                print('    Planet ' + urlid)
+            post(url + urlid, prepareplanet, '    Planet ' + urlid)
+
             for moon in planet["childs"]:
-                # insert moon
-                # convert to json
-                raw_data = json.dumps(moon)
                 urlid = "[" + 'y' + str(starsystem["id"]) + 's' + str(star["id"]) + 'p' + str(planet["id"]) + 'm' + str(moon["id"]) + "]"
-                r = requests.post(url + urlid, json=preparestar, auth=(username, password))
-                if r.json()['error']:
-                    pp(r.json())
-                else:
-                    print('      Moon ' + urlid)
+                post(url + urlid, moon, '      Moon ' + urlid)
