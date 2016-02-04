@@ -2,8 +2,6 @@
 
 import random
 import requests
-import base64
-import json
 import copy
 from pprintpp import pprint as pp
 
@@ -24,14 +22,15 @@ def generateMoonName():
     return random.choice(names) + " " + random.choice(names)
 
 def post(url, payload, msg=None, errorMsg=None):
-    r = requests.post(url, json=payload, auth=(username, password))
-    if not r.json()['error']:
+    r = requests.post(url, json=payload, auth=(username, password)).json()
+    if not r['error']:
         if msg:
             print(msg)
     else:
-        pp(r.json())
+        pp(r)
         if errorMsg:
             print(errorMsg)
+    return r
 
 universe = {}
 universe["starsystems"]= []
