@@ -1,13 +1,11 @@
 #!/usr/bin/python
 
 import random
-import pprint
-import httplib, urllib
+import requests
 import base64
-import string
 import json
-import sys
 import copy
+from pprintpp import pprint as pp
 
 def generateSystemName():
     names = ["Stellar", "Forge", "Sol", "Indeae", "Caseopae", "Alpha", "Centauris", "HTC", "Eagle"]
@@ -32,12 +30,12 @@ number_of_max_planets = 10
 number_of_max_moons = 10
 
 # Clusterpoint connection data
-host = "xxx.xxx.xxx.xxx"
+host = "192.168.7.58"
 username = "root"
 password = "password"
 port = "5580"
-auth = base64.encodestring('%s:%s' % (username, password)).replace('\n', '')
-url = "/v4/1/massive"
+path = "v4/1/massive"
+url = "http://" + host + ":" + port + "/" + path
 
 for starsystemid in range (1, 1000):
     # generate galactic coordinates
@@ -79,64 +77,46 @@ for starsystemid in range (1, 1000):
 
 # Insert data in database
 for starsystem in universe["starsystems"]:
-    conn = httplib.HTTPConnection(host, port)
-    # insert starsystem
     # prepare copy of dict, as we want to remove childs
     preparestarsystem = copy.deepcopy(starsystem)
     del preparestarsystem["childs"]
-    # convert to json
-    raw_data = json.dumps(preparestarsystem)
-    urlwithid = url + "[" + str(starsystem["id"]) + "]"
-    conn.putrequest('POST', urlwithid)
-    headers = {"Authorization": "Basic %s" % auth, "Content-Length": str(len(raw_data))}
-    for k in headers:
-            conn.putheader(k, headers[k])
-    conn.endheaders()    
-    conn.send(raw_data)
-    conn.close()
+    urlid = "[" + 'y' + str(starsystem["id"]) + "]"
+    r = requests.post(url + urlid, json=preparestarsystem, auth=(username, password))
+    if r.json()['error']:
+        pp(r.json())
+    else:
+        print('System ' + urlid)
+
     for star in starsystem["childs"]:
-        conn = httplib.HTTPConnection(host, port)
         # insert star
         # prepare copy of dict, as we want to remove childs
         preparestar = copy.deepcopy(star)
         del preparestar["childs"]
-        # convert to json
-        raw_data = json.dumps(preparestar)
-        urlwithid = url + "[" + str(starsystem["id"]) + str(star["id"]) + "]"
-        conn.putrequest('POST', urlwithid)
-        headers = {"Authorization": "Basic %s" % auth, "Content-Length": str(len(raw_data))}
-        for k in headers:
-            conn.putheader(k, headers[k])
-        conn.endheaders()    
-        conn.send(raw_data)
-        conn.close()
+        urlid = "[" + 'y' + str(starsystem["id"]) + 's' + str(star["id"]) + "]"
+        r = requests.post(url + urlid, json=preparestar, auth=(username, password))
+        if r.json()['error']:
+            pp(r.json())
+        else:
+            print('  Star ' + urlid)
+
         for planet in star["childs"]:
-            conn = httplib.HTTPConnection(host, port)
             # insert planet
             # prepare copy of dict, as we want to remove childs
             prepareplanet = copy.deepcopy(planet)
             del prepareplanet["childs"]
-            # convert to json
-            raw_data = json.dumps(prepareplanet)
-            urlwithid = url + "[" + str(starsystem["id"]) + str(star["id"]) + str(planet["id"]) + "]"
-            conn.putrequest('POST', urlwithid)
-            headers = {"Authorization": "Basic %s" % auth, "Content-Length": str(len(raw_data))}
-            for k in headers:
-                conn.putheader(k, headers[k])
-            conn.endheaders()    
-            conn.send(raw_data)
-            conn.close()
+            urlid = "[" + 'y' + str(starsystem["id"]) + 's' + str(star["id"]) + 'p' + str(planet["id"]) + "]"
+            r = requests.post(url + urlid, json=preparestar, auth=(username, password))
+            if r.json()['error']:
+                pp(r.json())
+            else:
+                print('    Planet ' + urlid)
             for moon in planet["childs"]:
-                conn = httplib.HTTPConnection(host, port)
                 # insert moon
                 # convert to json
                 raw_data = json.dumps(moon)
-                urlwithid = url + "[" + str(starsystem["id"]) + str(star["id"]) + str(planet["id"]) + str(moon["id"]) + "]"
-                conn.putrequest('POST', urlwithid)
-                headers = {"Authorization": "Basic %s" % auth, "Content-Length": str(len(raw_data))}
-                for k in headers:
-                    conn.putheader(k, headers[k])
-                conn.endheaders()    
-                conn.send(raw_data)
-                conn.close()
-conn.close()
+                urlid = "[" + 'y' + str(starsystem["id"]) + 's' + str(star["id"]) + 'p' + str(planet["id"]) + 'm' + str(moon["id"]) + "]"
+                r = requests.post(url + urlid, json=preparestar, auth=(username, password))
+                if r.json()['error']:
+                    pp(r.json())
+                else:
+                    print('      Moon ' + urlid)
