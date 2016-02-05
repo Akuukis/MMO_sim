@@ -6,6 +6,15 @@ from pprintpp import pprint as pp
 import cp
 import utils
 
+def rndCoords(distance, zFlatness):
+    distance = random.randrange(distance[0],distance[1])
+    x = utils.rnd()
+    y = utils.rnd()
+    z = utils.rnd() * zFlatness
+    l = (x**3 + y**3 + z**3)**(1/3)
+    k = distance / l
+    return [x*k, y*k, z*k]
+
 def main(tick, config):
     universe = {
         "lastSystemId": 0,
@@ -19,21 +28,30 @@ def main(tick, config):
             for planet in range(1, int(utils.dist_skewedLeft(config['planets']))):
                 moons = []
                 for moon in range(1, int(utils.dist_skewedLeft(config['moons']))):
+                    coords = rndCoords(config['moonDistance'], config['zFlatness'])
                     moons.append({
                         "id": moon,
                         "type": "moon",
-                        "distance": int(random.randrange(config['moonDistance'][0],config['moonDistance'][1]))
+                        "x": coords['x'],
+                        "y": coords['y'],
+                        "z": coords['z'],
                     })
+                coords = rndCoords(config['planetDistance'], config['zFlatness'])
                 planets.append({
                     "id": planet,
                     "type": "planet",
-                    "distance": int(random.randrange(config['planetDistance'][0],config['planetDistance'][1])),
+                        "x": coords['x'],
+                        "y": coords['y'],
+                        "z": coords['z'],
                     "childs": moons,
                 })
+            coords = rndCoords(config['starDistance'], config['zFlatness'])
             stars.append({
                 "id": star,
                 "type": "star",
-                "distance": int(random.randrange(config['starDistance'][0],config['starDistance'][1])),
+                        "x": coords['x'],
+                        "y": coords['y'],
+                        "z": coords['z'],
                 "childs": planets
             })
         universe['lastSystemId'] += 1

@@ -13,10 +13,11 @@
     "stars": [2, 3.0],
     "planets": [6, 2.0],
     "moons": [3, 3.0],
-    /* Distances */
+    /* Locations */
     "starDistance": [110, 1200000], /* from-to, random.range */
     "planetDistance": [110, 40320], /* from-to, random.range */
     "moonDistance": [20, 500], /* from-to, random.range */
+    "zFlatness": 0.4, /* 0 means everyone has z=0, 1 means no penalty */
     /* Planet properties */
     "planetType": [0.2, 0.25, 0.25, 0.25, 0.05], /*Gas, Ice, Rock, Iron, Mix*/
     "planetSize": [6, 3.0],
