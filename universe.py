@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import math
 import random
 from pprintpp import pprint as pp
 
@@ -11,9 +12,9 @@ def rndCoords(distance, zFlatness):
     x = utils.rnd()
     y = utils.rnd()
     z = utils.rnd() * zFlatness
-    l = (x**3 + y**3 + z**3)**(1/3)
+    l = math.fabs(x**3 + y**3 + z**3)**(1/3)
     k = distance / l
-    return {"x":x*k, "y":y*k, "z":z*k}
+    return {"x":float(x*k), "y":float(y*k), "z":float(z*k)}
 
 def main(tick, config):
     universe = {
@@ -31,25 +32,25 @@ def main(tick, config):
                     moons.append({
                         "id": moon,
                         "type": "moon",
-                        "sys_coords": rndCoords(config['moonDistance'], config['zFlatness'])
+                        "system_coords": rndCoords(config['moonDistance'], config['zFlatness'])
                     })
                 planets.append({
                     "id": planet,
                     "type": "planet",
-                    "sys_coords": rndCoords(config['planetDistance'], config['zFlatness']),
+                    "system_coords": rndCoords(config['planetDistance'], config['zFlatness']),
                     "childs": moons,
                 })
             stars.append({
                 "id": star,
                 "type": "star",
-                "sys_coords": rndCoords(config['starDistance'], config['zFlatness']),
+                "system_coords": rndCoords(config['starDistance'], config['zFlatness']),
                 "childs": planets
             })
         universe['lastSystemId'] += 1
         universe['systems'].append({
             "id": system,
             "type": "system",
-            "uni_coords": {
+            "universe_coords": {
                 "x": random.randrange(config['x'][0],config['x'][1]),
                 "y": random.randrange(config['y'][0],config['y'][1]),
                 "z": random.randrange(config['z'][0],config['z'][1]),
