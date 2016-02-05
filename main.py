@@ -1,16 +1,9 @@
 import math
 import random
+import json
+from pprintpp import pprint as pp
 
 tick = 0
-
-# Config ######################################################################
-
-config = {
-    'maxColonies': 100,
-    'optimalPlanetDistance': 480,
-    'optimalPlanetRange': 200,
-}
-
 
 # Resources ###################################################################
 
@@ -239,6 +232,12 @@ def spawn_colony():
 
 # tick starts #################################################################
 
+with open('config.json') as data_file:
+    print(data_file)
+    config = json.load(data_file)
+
+pp(config)
+
 # Update tick
 tick = tick + 1
 
@@ -252,7 +251,7 @@ if random.random() > get_all_colonies().length / config.maxColonies:
         distance = get_vector(planet.coords, planet.sun.coords)
         moons = planet.moons.length
         # 8 minutes and 1 moon gives highest chance (like Earth)
-        chance = moons / (moons + 0.0001)
+        chance = moons / (moons * 2 + 0.0001)
         chance -= math.fabs(config.optimalPlanetDistance - distance) / config.optimalPlanetRange
         if chance > 0.01:
             picklist.append([chance, planet])
