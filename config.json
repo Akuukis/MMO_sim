@@ -1,13 +1,22 @@
 {
-    /* If not otherwise stated, array-2 means [average, deviation], and thus
-       amount = math.floor(avg * random.range(1/dev, dev)) */
+    /* If not otherwise stated, array-2 means [average, deviation], and thus */
+    /* amount = math.floor(avg * random.range(1/dev, dev)) */
+
+    /***** Universe-wide stuff */
+    "x": [0, 110000], /* from-to */
+    "y": [0, 110000], /* from-to */
+    "z": [-100, 100], /* from-to */
 
     /***** Static object generation (systems, stars, planets, moons) */
     /* Amounts */
-    "Systems": [1000, 1.05],
-    "Stars": [2, 3.0],
-    "Planets": [6, 2.0],
-    "Moons": [3, 3.0],
+    "systems": [1000, 1.05],
+    "stars": [2, 3.0],
+    "planets": [6, 2.0],
+    "moons": [3, 3.0],
+    /* Distances */
+    "starDistance": [110, 1200000], /* from-to, random.range */
+    "planetDistance": [110, 40320], /* from-to, random.range */
+    "moonDistance": [20, 500], /* from-to, random.range */
     /* Planet properties */
     "planetType": [0.2, 0.25, 0.25, 0.25, 0.05], /*Gas, Ice, Rock, Iron, Mix*/
     "planetSize": [6, 3.0],

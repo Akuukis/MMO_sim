@@ -7,6 +7,7 @@ import threading
 import importlib
 import time
 from queue import Queue
+from jsmin import jsmin
 from pprintpp import pprint as pp
 
 # Resources ###################################################################
@@ -250,13 +251,13 @@ while True:
     start = ms()
 
     with open('config.json') as data_file:
-        config = json.load(data_file)
+        config = json.loads(jsmin(data_file.read()))
 
     def worker(library):
         q.get()
         start = ms()
         part = importlib.__import__(library)
-        # part.main(tick)
+        log = part.main(tick, config)
         with lock:
             print("       %7.5f for %s." % (ms() - start, library))
         q.task_done()
