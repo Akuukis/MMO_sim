@@ -1,9 +1,13 @@
+#!/usr/bin/python3
+
 import math
 import random
 import json
+import threading
+import importlib
+import time
+from queue import Queue
 from pprintpp import pprint as pp
-
-tick = 0
 
 # Resources ###################################################################
 
@@ -122,6 +126,12 @@ def choose_weighted(array):
 # routines ####################################################################
 
 
+def ms():
+    from datetime import datetime
+    dt = datetime.utcnow()
+    return dt.hour * 60 * 60 + dt.minute * 60 + dt.second + dt.microsecond / 1000000
+
+
 def upkeep_population(colony):
     size = colony.population
     for key, amount in colony.storage.goods:
@@ -230,50 +240,54 @@ def spawn_colony():
     pass
 
 
-# tick starts #################################################################
+# lock to serialize console output
+lock = threading.Lock()
+q = Queue()
+tick = 0
+while True:
+    # Reload stuff ############################################################
 
-with open('config.json') as data_file:
-    print(data_file)
-    config = json.load(data_file)
+    start = ms()
 
-pp(config)
+    with open('config.json') as data_file:
+        config = json.load(data_file)
 
-# Update tick
-tick = tick + 1
+    def worker(library):
+        q.get()
+        start = ms()
+        part = importlib.__import__(library)
+        # part.main(tick)
+        with lock:
+            print("       %7.5f for %s." % (ms() - start, library))
+        q.task_done()
 
-# Update universe, create or age systems, stars, planets
-pass
-
-# Check planets to spawn new Faction with Colony
-if random.random() > get_all_colonies().length / config.maxColonies:
-    picklist = []
-    for planet in get_all_planets():
-        distance = get_vector(planet.coords, planet.sun.coords)
-        moons = planet.moons.length
-        # 8 minutes and 1 moon gives highest chance (like Earth)
-        chance = moons / (moons * 2 + 0.0001)
-        chance -= math.fabs(config.optimalPlanetDistance - distance) / config.optimalPlanetRange
-        if chance > 0.01:
-            picklist.append([chance, planet])
-
-    lucky = choose_weighted(picklist)
-    faction = spawn_faction()
-    spawn_colony(faction, lucky)
-
-# Production and upkeep
-if tick % 10 == 0:
-    for colony in get_all_colonies():
-        produce_goods(colony)  # Colony produce (10 * (habitability-population/10)) local goods per population
-        produce_materials(colony)  # Colony produce (10 * richness * weight) every material per industry
-        upkeep_population(colony)  # Colony upkeeps 1 unique exotic good or 4 local goods per population
-        upkeep_industry(colony)  # Colony upkeeps 1 unique exotic good or 4 solids per industry
-
-# Construction
-if tick % 50 == 0:
-    for faction in get_all_factions():
-        for colony in faction.colonies:
-            upgrade_colony(colony, faction)  # Colony upgrades either population or industry by 1000 local goods and 1000 solids
-            create_ships(colony, faction)  # Prioritize randomly weighted by preferences of Faction
+    def spawn_worker(library):
+        q.put(True)
+        t = threading.Thread(target=worker, args=(library,))
+        # t.daemon = True  # thread dies when main thread (only non-daemon thread) exits.
+        t.start()
 
 
-# tick ends ###################################################################
+    # Update universe, create or age systems, stars, planets
+    spawn_worker('universe')
+
+    # Check planets to spawn new Faction with Colony
+    spawn_worker('spawn_factions')
+
+    # Production and upkeep
+    spawn_worker('economy')
+
+    # Construction
+    spawn_worker('construction')
+
+    # Ship movement
+    spawn_worker('ships')
+
+    # Wait for all threads
+    q.join()
+
+    # Update tick
+    tick = tick + 1
+    print("%5d: %7.5f total." % (tick, ms() - start))
+    time.sleep(0.01)
+    # tick ends ###################################################################
