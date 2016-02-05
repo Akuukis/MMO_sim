@@ -1,5 +1,46 @@
 {
-    "maxColonies": 100,
-    "optimalPlanetDistance": 480,
-    "optimalPlanetRange": 200
+    /* If not otherwise stated, array-2 means [average, deviation], and thus
+       amount = math.floor(avg * random.range(1/dev, dev)) */
+
+    /***** Static object generation (systems, stars, planets, moons) */
+    /* Amounts */
+    "Systems": [1000, 1.05],
+    "Stars": [2, 3.0],
+    "Planets": [6, 2.0],
+    "Moons": [3, 3.0],
+    /* Planet properties */
+    "planetType": [0.2, 0.25, 0.25, 0.25, 0.05], /*Gas, Ice, Rock, Iron, Mix*/
+    "planetSize": [6, 3.0],
+    "planetHabitability": [1.0, 4.0],
+    "planetRichness": [1.0, 4.0],
+    "planetWeightSolidsOther": [0.5, 2],
+    "planetWeightMetalsIsotopes": [0.5, 2],
+    /* Moon properties */
+    "moonType": [0, 0.3, 0.3, 0.3, 0.1], /*Gas, Ice, Rock, Iron, Mix*/
+    "moonSize": [2, 3.0], /* and math.min(size, planet.size/2) */
+    "moonHabitability": [0.6, 3.0],
+    "moonRichness": [0.6, 3.0],
+    "moonWeightSolidsOther": [0.5, 2],
+    "moonWeightMetalsIsotopes": [0.5, 2],
+
+    /***** Faction (and initial colony) spawning */
+    /* Amounts */
+    "avgColonies": 100,
+    /* Spawn probability per planet */
+    "optimalDistance": [480, 2], /* from-to, weighted: at center best */
+    "moonCount": [2,1], /* from-to, weighted: at center best */
+    /* Preferences */
+    "population_industry": [0.5,0.5], /* = math.floor(random.range(x-y,x+y)) */
+    "pacific_militaristic": [0.5,0.5], /* = math.floor(random.range(x-y,x+y)) */
+    "defence_attack": [0.5,0.5], /* = math.floor(random.range(x-y,x+y)) */
+    "growth_expand": [0.5,0.5], /* = math.floor(random.range(x-y,x+y)) */
+
+    /***** Economy */
+    /* TODO */
+
+    /***** Movement & Fightning */
+    /* TODO */
+
+    /* Don't touch :D */
+    "__noCommaHere": true
 }
