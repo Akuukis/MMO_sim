@@ -18,17 +18,17 @@ def rndCoords(distance, zFlatness):
 
 def main(tick, config):
     universe = {
-        "lastSystemId": 0,
+        "tick": 0,
         "systems": []
     }
     # Generate universe
-    for system in range(1, int(utils.dist_skewedLeft(config['systems']))):
+    for system in range(0, int(utils.dist_skewedLeft(config['systems']))):
         stars = []
-        for star in range(1, int(utils.dist_skewedLeft(config['stars']))):
+        for star in range(0, int(utils.dist_skewedLeft(config['stars']))):
             planets = []
-            for planet in range(1, int(utils.dist_skewedLeft(config['planets']))):
+            for planet in range(0, int(utils.dist_skewedLeft(config['planets']))):
                 moons = []
-                for moon in range(1, int(utils.dist_skewedLeft(config['moons']))):
+                for moon in range(0, int(utils.dist_skewedLeft(config['moons']))):
                     moons.append({
                         "id": moon,
                         "type": "moon",
@@ -46,7 +46,6 @@ def main(tick, config):
                 "system_coords": rndCoords(config['starDistance'], config['zFlatness']),
                 "childs": planets
             })
-        universe['lastSystemId'] += 1
         universe['systems'].append({
             "id": system,
             "type": "system",
@@ -65,21 +64,22 @@ def main(tick, config):
     #conn.set_debuglevel(10)
 
     # Insert universe in database
+    pre = '[t' + str(universe['tick'])
     for system in universe["systems"]:
+        urly = 'y' + str(system["id"])
         for star in system["childs"]:
+            urls = urly + 's' + str(star["id"])
             for planet in star["childs"]:
+                urlp = urls + 'p' + str(planet["id"])
                 for moon in planet["childs"]:
-                    urlid = "[" + 'y' + str(system["id"]) + 's' + str(star["id"]) + 'p' + str(planet["id"]) + 'm' + str(moon["id"]) + "]"
-                    cp.put(payload=moon, params=urlid, msg='      Moon ' + urlid)
+                    urlm = urlp + 'm' + str(moon["id"])
+                    cp.put(payload=moon, params=pre+urlm+"]", msg='      Moon ' + urlm)
                 del planet["childs"]
-                urlid = "[" + 'y' + str(system["id"]) + 's' + str(star["id"]) + 'p' + str(planet["id"]) + "]"
-                cp.put(payload=planet, params=urlid, msg='    Planet ' + urlid)
+                cp.put(payload=planet, params=pre+urlp+"]", msg='    Planet ' + urlp)
             del star["childs"]
-            urlid = "[" + 'y' + str(planet["id"]) + 's' + str(star["id"]) + "]"
-            cp.put(payload=star, params=urlid, msg='  Star ' + urlid)
+            cp.put(payload=star, params=pre+urls+"]", msg='  Star ' + urls)
         del system["childs"]
-        urlid = "[" + 'y' + str(system["id"]) + "]"
-        cp.put(payload=system, params=urlid, msg='System ' + urlid)
+        cp.put(payload=system, params=pre+urly+"]", msg='System ' + urly)
 
 if __name__ == "__main__":
     main()
