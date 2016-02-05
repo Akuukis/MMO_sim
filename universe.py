@@ -1,10 +1,9 @@
 #!/usr/bin/python3
 
 import random
-import requests
 import copy
 from pprintpp import pprint as pp
-
+import cp
 
 def main(tick):
     def generateSystemName():
@@ -23,30 +22,11 @@ def main(tick):
         names = ["Stellar", "Forge", "Sol", "Indeae", "Caseopae", "Alpha", "Centauris", "HTC", "Eagle"]
         return random.choice(names) + " " + random.choice(names)
 
-    def post(url, payload, msg=None, errorMsg=None):
-        r = requests.post(url, json=payload, auth=(username, password)).json()
-        if not r['error']:
-            if msg:
-                print(msg)
-        else:
-            pp(r)
-            if errorMsg:
-                print(errorMsg)
-        return r
-
     universe = {}
     universe["starsystems"]= []
     number_of_max_stars = 10
     number_of_max_planets = 10
     number_of_max_moons = 10
-
-    # Clusterpoint connection data
-    host = "192.168.7.58"
-    username = "root"
-    password = "password"
-    port = "5580"
-    path = "v4/1/massive"
-    url = "http://" + host + ":" + port + "/" + path
 
     for starsystemid in range (1, 1000):
         # generate galactic coordinates
@@ -91,23 +71,23 @@ def main(tick):
         preparestarsystem = copy.deepcopy(starsystem)  # prepare copy of dict, as we want to remove childs
         del preparestarsystem["childs"]
         urlid = "[" + 'y' + str(starsystem["id"]) + "]"
-        post(url + urlid, preparestarsystem, 'System ' + urlid)
+        cp.put(payload=preparestarsystem, params=urlid, msg='System ' + urlid)
 
         for star in starsystem["childs"]:
             preparestar = copy.deepcopy(star)
             del preparestar["childs"]
             urlid = "[" + 'y' + str(starsystem["id"]) + 's' + str(star["id"]) + "]"
-            post(url + urlid, preparestar, '  Star ' + urlid)
+            cp.put(payload=preparestar, params=urlid, msg='  Star ' + urlid)
 
             for planet in star["childs"]:
                 prepareplanet = copy.deepcopy(planet)
                 del prepareplanet["childs"]
                 urlid = "[" + 'y' + str(starsystem["id"]) + 's' + str(star["id"]) + 'p' + str(planet["id"]) + "]"
-                post(url + urlid, prepareplanet, '    Planet ' + urlid)
+                cp.put(payload=prepareplanet, params=urlid, msg='    Planet ' + urlid)
 
                 for moon in planet["childs"]:
                     urlid = "[" + 'y' + str(starsystem["id"]) + 's' + str(star["id"]) + 'p' + str(planet["id"]) + 'm' + str(moon["id"]) + "]"
-                    post(url + urlid, moon, '      Moon ' + urlid)
+                    cp.put(payload=moon, params=urlid, msg='      Moon ' + urlid)
 
 if __name__ == "__main__":
     main()
