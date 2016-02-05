@@ -13,7 +13,7 @@ def rndCoords(distance, zFlatness):
     z = utils.rnd() * zFlatness
     l = (x**3 + y**3 + z**3)**(1/3)
     k = distance / l
-    return [x*k, y*k, z*k]
+    return {"x":x*k, "y":y*k, "z":z*k}
 
 def main(tick, config):
     universe = {
@@ -28,39 +28,32 @@ def main(tick, config):
             for planet in range(1, int(utils.dist_skewedLeft(config['planets']))):
                 moons = []
                 for moon in range(1, int(utils.dist_skewedLeft(config['moons']))):
-                    coords = rndCoords(config['moonDistance'], config['zFlatness'])
                     moons.append({
                         "id": moon,
                         "type": "moon",
-                        "x": coords['x'],
-                        "y": coords['y'],
-                        "z": coords['z'],
+                        "sys_coords": rndCoords(config['moonDistance'], config['zFlatness'])
                     })
-                coords = rndCoords(config['planetDistance'], config['zFlatness'])
                 planets.append({
                     "id": planet,
                     "type": "planet",
-                        "x": coords['x'],
-                        "y": coords['y'],
-                        "z": coords['z'],
+                    "sys_coords": rndCoords(config['planetDistance'], config['zFlatness']),
                     "childs": moons,
                 })
-            coords = rndCoords(config['starDistance'], config['zFlatness'])
             stars.append({
                 "id": star,
                 "type": "star",
-                        "x": coords['x'],
-                        "y": coords['y'],
-                        "z": coords['z'],
+                "sys_coords": rndCoords(config['starDistance'], config['zFlatness']),
                 "childs": planets
             })
         universe['lastSystemId'] += 1
         universe['systems'].append({
             "id": system,
             "type": "system",
-            "x": random.randrange(config['x'][0],config['x'][1]),
-            "y": random.randrange(config['y'][0],config['y'][1]),
-            "z": random.randrange(config['z'][0],config['z'][1]),
+            "uni_coords": {
+                "x": random.randrange(config['x'][0],config['x'][1]),
+                "y": random.randrange(config['y'][0],config['y'][1]),
+                "z": random.randrange(config['z'][0],config['z'][1]),
+            },
             "childs": stars
         })
 
