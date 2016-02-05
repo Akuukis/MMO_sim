@@ -39,6 +39,9 @@
     /* TODO */
 
     /***** Movement & Fightning */
+    "lightYearsPerTick": 1,
+    "lightSecondsPerTick": 200,
+
     /* TODO */
 
     /* Don't touch :D */
