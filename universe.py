@@ -1,93 +1,73 @@
 #!/usr/bin/python3
 
 import random
-import copy
 from pprintpp import pprint as pp
+
 import cp
+import utils
 
-def main(tick):
-    def generateSystemName():
-        names = ["Stellar", "Forge", "Sol", "Indeae", "Caseopae", "Alpha", "Centauris", "HTC", "Eagle"]
-        return random.choice(names) + " " + random.choice(names)
-
-    def generateStarName():
-        names = ["Stellar", "Forge", "Sol", "Indeae", "Caseopae", "Alpha", "Centauris", "HTC", "Eagle"]
-        return random.choice(names) + " " + random.choice(names)
-
-    def generatePlanetName():
-        names = ["Stellar", "Forge", "Sol", "Indeae", "Caseopae", "Alpha", "Centauris", "HTC", "Eagle"]
-        return random.choice(names) + " " + random.choice(names)
-
-    def generateMoonName():
-        names = ["Stellar", "Forge", "Sol", "Indeae", "Caseopae", "Alpha", "Centauris", "HTC", "Eagle"]
-        return random.choice(names) + " " + random.choice(names)
-
-    universe = {}
-    universe["starsystems"]= []
-    number_of_max_stars = 10
-    number_of_max_planets = 10
-    number_of_max_moons = 10
-
-    for starsystemid in range (1, 1000):
-        # generate galactic coordinates
-        x = random.randrange(4,110000)
-        y = random.randrange(4,110000)
-        z = random.randrange(0,100)
-        # getting name for star system
-        newstarsystem = {"objectName": generateSystemName(), "id": starsystemid, "type": "starsystem", "x": x, "y": y, "z": z}
-        # getting stars in system
-        random_stars = random.randrange(1, number_of_max_stars)
+def main(tick, config):
+    universe = {
+        "lastSystemId": 0,
+        "systems": []
+    }
+    # Generate universe
+    for system in range(1, int(utils.dist_skewedLeft(config['systems']))):
         stars = []
-        for starsnr in range (1, random_stars):
-            distance = random.randrange(110, 1200000)
-            newstar = {"objectName": generateStarName(), "id": starsnr, "type": "star", "distance": distance}
-            stars.append(newstar)
-            random_planets = random.randrange(1, number_of_max_planets)
+        for star in range(1, int(utils.dist_skewedLeft(config['stars']))):
             planets = []
-            # getting planets for each star
-            for planetsnr in range (1, random_planets):
-                distance = random.randrange(110, 40320)
-                newplanet = {"objectName": generateStarName(), "id": planetsnr, "type": "planet", "distance": distance}
-                planets.append(newplanet)
+            for planet in range(1, int(utils.dist_skewedLeft(config['planets']))):
                 moons = []
-                random_moons = random.randrange(1, number_of_max_moons)
-                for moonsnr in range (1, random_moons):
-                    distance = random.randrange(200000, 500000)
-                    newmoon = {"objectName": generateMoonName(), "id": moonsnr, "type": "moon", "distance": distance}
-                    moons.append(newmoon)
-                newplanet["childs"] = moons
-            newstar["childs"] = planets
-        newstarsystem["childs"] = stars
+                for moon in range(1, int(utils.dist_skewedLeft(config['moons']))):
+                    moons.append({
+                        "id": moon,
+                        "type": "moon",
+                        "distance": int(random.randrange(config['moonDistance'][0],config['moonDistance'][1]))
+                    })
+                planets.append({
+                    "id": planet,
+                    "type": "planet",
+                    "distance": int(random.randrange(config['planetDistance'][0],config['planetDistance'][1])),
+                    "childs": moons,
+                })
+            stars.append({
+                "id": star,
+                "type": "star",
+                "distance": int(random.randrange(config['starDistance'][0],config['starDistance'][1])),
+                "childs": planets
+            })
+        universe['lastSystemId'] += 1
+        universe['systems'].append({
+            "id": system,
+            "type": "system",
+            "x": random.randrange(config['x'][0],config['x'][1]),
+            "y": random.randrange(config['y'][0],config['y'][1]),
+            "z": random.randrange(config['z'][0],config['z'][1]),
+            "childs": stars
+        })
 
-        universe["starsystems"].append(newstarsystem)
 
     #pp = pprint.PrettyPrinter(indent=4)
     #print(pp.pprint(universe))
     #print("\n")
     #conn.set_debuglevel(10)
 
-    # Insert data in database
-    for starsystem in universe["starsystems"]:
-        preparestarsystem = copy.deepcopy(starsystem)  # prepare copy of dict, as we want to remove childs
-        del preparestarsystem["childs"]
-        urlid = "[" + 'y' + str(starsystem["id"]) + "]"
-        cp.put(payload=preparestarsystem, params=urlid, msg='System ' + urlid)
-
-        for star in starsystem["childs"]:
-            preparestar = copy.deepcopy(star)
-            del preparestar["childs"]
-            urlid = "[" + 'y' + str(starsystem["id"]) + 's' + str(star["id"]) + "]"
-            cp.put(payload=preparestar, params=urlid, msg='  Star ' + urlid)
-
+    # Insert universe in database
+    for system in universe["systems"]:
+        for star in system["childs"]:
             for planet in star["childs"]:
-                prepareplanet = copy.deepcopy(planet)
-                del prepareplanet["childs"]
-                urlid = "[" + 'y' + str(starsystem["id"]) + 's' + str(star["id"]) + 'p' + str(planet["id"]) + "]"
-                cp.put(payload=prepareplanet, params=urlid, msg='    Planet ' + urlid)
-
                 for moon in planet["childs"]:
-                    urlid = "[" + 'y' + str(starsystem["id"]) + 's' + str(star["id"]) + 'p' + str(planet["id"]) + 'm' + str(moon["id"]) + "]"
+                    urlid = "[" + 'y' + str(system["id"]) + 's' + str(star["id"]) + 'p' + str(planet["id"]) + 'm' + str(moon["id"]) + "]"
                     cp.put(payload=moon, params=urlid, msg='      Moon ' + urlid)
+                del planet["childs"]
+                urlid = "[" + 'y' + str(system["id"]) + 's' + str(star["id"]) + 'p' + str(planet["id"]) + "]"
+                cp.put(payload=planet, params=urlid, msg='    Planet ' + urlid)
+            del star["childs"]
+            urlid = "[" + 'y' + str(planet["id"]) + 's' + str(star["id"]) + "]"
+            cp.put(payload=star, params=urlid, msg='  Star ' + urlid)
+        del system["childs"]
+        urlid = "[" + 'y' + str(system["id"]) + "]"
+        cp.put(payload=system, params=urlid, msg='System ' + urlid)
 
 if __name__ == "__main__":
     main()
