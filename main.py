@@ -240,11 +240,35 @@ def spawn_faction():
 def spawn_colony():
     pass
 
+tick = 0
 
 # lock to serialize console output
 lock = threading.Lock()
+
+# Threading
+def worker():
+    while True:
+        libraryOrFn = q.get()
+        print(libraryOrFn)
+        start = ms()
+        if libraryOrFn == False:
+            q.task_done()
+            break  # Die
+        elif type(libraryOrFn) is str:
+            part = importlib.__import__(libraryOrFn)
+            log = part.main(tick, config)
+            with lock:
+                print("       %7.5f for %s." % (ms() - start, libraryOrFn, log))
+            q.task_done()
+        elif type(libraryOrFn) is callable:
+            log = libraryOrFn(tick, config)
+            with lock:
+                print("       %7.5f for %s." % (ms() - start, log))
+            q.task_done()
+        else:
+            print('Error for '+str(type(libraryOrFn))+" "+str(libraryOrFn))
+
 q = Queue()
-tick = 0
 while True:
     # Reload stuff ############################################################
 
@@ -253,39 +277,30 @@ while True:
     with open('config.json') as data_file:
         config = json.loads(jsmin(data_file.read()))
 
-    def worker(library):
-        q.get()
-        start = ms()
-        part = importlib.__import__(library)
-        log = part.main(tick, config)
-        with lock:
-            print("       %7.5f for %s." % (ms() - start, library))
-        q.task_done()
-
-    def spawn_worker(library):
-        q.put(True)
-        t = threading.Thread(target=worker, args=(library,))
-        # t.daemon = True  # thread dies when main thread (only non-daemon thread) exits.
-        t.start()
-
+    # Respawn workers
+    for i in range(config['num_worker_threads']):
+         t = threading.Thread(target=worker)
+         t.start()
 
     # Update universe, create or age systems, stars, planets
-    spawn_worker('universe')
+    q.put('universe')
 
     # Check planets to spawn new Faction with Colony
-    spawn_worker('spawn_factions')
+    q.put('spawn_factions')
 
     # Production and upkeep
-    spawn_worker('economy')
+    q.put('economy')
 
     # Construction
-    spawn_worker('construction')
+    q.put('construction')
 
     # Ship movement
-    spawn_worker('ships')
+    q.put('ships')
 
-    # Wait for all threads
+    # Wait for all threads and kill all workers
     q.join()
+    for i in range(config['num_worker_threads']):
+        q.put(False)
 
     # Update tick
     tick = tick + 1
