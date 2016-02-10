@@ -71,33 +71,35 @@ faction = {
 # Statics #####################################################################
 
 moon = {
-    'coords': [0, 0, 0],  # in LS relative to system
+    'system_coords': [0, 0, 0],  # in LS relative to system
     'type': 'Gas' or 'Ice' or 'Rock' or 'Iron' or 'Mix',  # Colonize only home planet type. Gas by none, Mix by all
     'size': 3,  # Also maxSize for colony
     'habitability': 0.9,  # Modifier to good generation for colony
     'richness': 1.5,  # Modifier to raw material generation for colony
-    'weightSolids': 0.5,  # Modifier to solid generation for colony. Solid+Metal+Radioactive = 1
-    'weightMetals': 0.3,  # Modifier to metal generation for colony. Solid+Metal+Radioactive = 1
-    'weightIsotopes': 0.2,  # Modifier to radioactive generation for colony. Solid+Metal+Radioactive = 1
+    'materials': [
+        0.5,  # Modifier to solid generation for colony. Solid+Metal+Radioactive = 1
+        0.3,  # Modifier to metal generation for colony. Solid+Metal+Radioactive = 1
+        0.2, ],  # Modifier to radioactive generation for colony. Solid+Metal+Radioactive = 1
     'colony': False
 }
 
 planet = {
     'moons': [moon, moon],
-    'coords': [0, 0, 0],  # in LS relative to system
+    'system_coords': [0, 0, 0],  # in LS relative to system
     'type': 'Gas' or 'Ice' or 'Rock' or 'Iron' or 'Mix',  # Colonize only home planet type. Gas by none, Mix by all
     'size': 10,  # = maxSize = (population + industry) for colony
     'habitability': 0.9,  # Modifier to good generation for colony
     'richness': 1.5,  # Modifier to raw material generation for colony
-    'weightSolids': 0.5,  # Modifier to solid generation for colony. Solid+Metal+Radioactive = 1
-    'weightMetals': 0.3,  # Modifier to metal generation for colony. Solid+Metal+Radioactive = 1
-    'weightIsotopes': 0.2,  # Modifier to radioactive generation for colony. Solid+Metal+Radioactive = 1
+    'materials': [
+        0.5,  # Modifier to solid generation for colony. Solid+Metal+Radioactive = 1
+        0.3,  # Modifier to metal generation for colony. Solid+Metal+Radioactive = 1
+        0.2, ],  # Modifier to radioactive generation for colony. Solid+Metal+Radioactive = 1
     'colony': False,
 }
 
 star = {
     'planets': [planet, planet],
-    'coords': [0, 0, 0],  # in LS relative to system
+    'system_coords': [0, 0, 0],  # in LS relative to system
 }
 
 system = {

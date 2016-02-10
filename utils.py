@@ -12,6 +12,15 @@ def dist_skewedLeft(array):
 def dist_skewedRight(array):
 	return array[0]*array[1] - array[0]*array[1]**rnd()
 
+def choose_weighted(array):
+	# Assume number in array sum to 1
+	pick = random.random()
+	cum = 0
+	for i,v in enumerate(array):
+		cum += v
+		if pick < cum:
+			return i
+
 def main(tick):
     pass
 

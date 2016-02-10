@@ -16,6 +16,13 @@ def rndCoords(distance, zFlatness):
     k = distance / l
     return {"x":float(x*k), "y":float(y*k), "z":float(z*k)}
 
+def rndMaterials(solidsOther, MetalsIsotopes):
+    weights = [] # Material weights, [0]: Solids, [1]: Metals, [2]: Isotopes
+    weights.append(round(utils.dist_skewedLeft(solidsOther), 2))
+    weights.append(round(utils.dist_skewedLeft(MetalsIsotopes) * (1-weights[0]), 2))
+    weights.append(1 - weights[0] - weights[1])
+    return weights
+
 def main(tick, config):
     universe = {
         "tick": 0,
@@ -31,24 +38,34 @@ def main(tick, config):
                 for moon in range(0, int(utils.dist_skewedLeft(config['moons']))):
                     moons.append({
                         "id": moon,
-                        "type": "moon",
-                        "system_coords": rndCoords(config['moonDistance'], config['zFlatness'])
+                        "object": "moon",
+                        "system_coords": rndCoords(config['moonDistance'], config['zFlatness']),
+                        'type': ['Gas', 'Ice', 'Rock', 'Iron', 'Mix'][utils.choose_weighted(config['moonType'])],
+                        'size': round(utils.dist_skewedLeft(config['moonSize']), 0),
+                        'habitability': round(utils.dist_skewedLeft(config['moonHabitability']), 0),
+                        'richness': round(utils.dist_skewedLeft(config['moonRichness']), 0),
+                        'materials': rndMaterials(config['moonWeightSolidsOther'], config['moonWeightMetalsIsotopes']),
                     })
                 planets.append({
                     "id": planet,
-                    "type": "planet",
+                    "object": "planet",
                     "system_coords": rndCoords(config['planetDistance'], config['zFlatness']),
                     "childs": moons,
+                    'type': ['Gas', 'Ice', 'Rock', 'Iron', 'Mix'][utils.choose_weighted(config['planetType'])],
+                    'size': round(utils.dist_skewedLeft(config['planetSize']), 0),
+                    'habitability': round(utils.dist_skewedLeft(config['planetHabitability']), 0),
+                    'richness': round(utils.dist_skewedLeft(config['planetRichness']), 0),
+                    'materials': rndMaterials(config['planetWeightSolidsOther'], config['planetWeightMetalsIsotopes']),
                 })
             stars.append({
                 "id": star,
-                "type": "star",
+                "object": "star",
                 "system_coords": rndCoords(config['starDistance'], config['zFlatness']),
                 "childs": planets
             })
         universe['systems'].append({
             "id": system,
-            "type": "system",
+            "object": "system",
             "universe_coords": {
                 "x": random.randrange(config['x'][0],config['x'][1]),
                 "y": random.randrange(config['y'][0],config['y'][1]),
