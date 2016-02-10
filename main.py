@@ -259,20 +259,9 @@ def worker():
         elif type(libraryOrFn) is str:
             try:
                 part = importlib.__import__(libraryOrFn)
-                log = part.main(tick, config)
+                log = part.main(tick, config, q)
                 with lock:
-                    print("       %7.5f for %s." % (ms() - start, libraryOrFn, log))
-            except Exception as e:
-                with lock:
-                    print("Error for "+str(libraryOrFn)+": "+str(e))
-                    traceback.print_exc()
-            finally:
-                q.task_done()
-        elif type(libraryOrFn) is callable:
-            try:
-                log = libraryOrFn(tick, config)
-                with lock:
-                    print("       %7.5f for %s." % (ms() - start, log))
+                    print("       %7.5f for %s: %s" % (ms() - start, libraryOrFn, log))
             except Exception as e:
                 with lock:
                     print("Error for "+str(libraryOrFn)+": "+str(e))
@@ -280,7 +269,16 @@ def worker():
             finally:
                 q.task_done()
         else:
-            print('Unknown object in queue for '+str(type(libraryOrFn))+" "+str(libraryOrFn))
+            try:
+                log = libraryOrFn(tick, config, q)
+                with lock:
+                    print("\n%s: %7.5f for %s." % (str(libraryOrFn), ms() - start, log))
+            except Exception as e:
+                with lock:
+                    print("Error for "+str(libraryOrFn)+": "+str(e))
+                    traceback.print_exc()
+            finally:
+                q.task_done()
 
 q = Queue()
 while True:

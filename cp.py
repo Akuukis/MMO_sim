@@ -11,22 +11,22 @@ url = "http://" + con['host'] + ":" + con['port'] + "/v4/" + str(con['userid']) 
 
 def put(payload, params='', msg=None, errorMsg=None):
     r = requests.post(url + params, json=payload, auth=(con['username'], con['password'])).json()
-    if not r['error']:
-        if msg:
-            print(msg)
-    else:
-        pp(r)
-        if errorMsg:
-            print(errorMsg)
+    # if not r['error']:
+    #     if msg:
+    #         print(msg)
+    # else:
+    #     pp(r)
+    #     if errorMsg:
+    #         print(errorMsg)
     return r
 
 def query(payload, msg=None, errorMsg=None):
     r = requests.post(url + '/_query', data=payload, auth=(con['username'], con['password'])).json()
-    if not r['error']:
-        if msg:
-            print(msg)
-    else:
-        pp(r)
-        if errorMsg:
-            print(errorMsg)
+    # if not r['error']:
+    #     if msg:
+    #         print(msg)
+    # else:
+    #     pp(r)
+    #     if errorMsg:
+    #         print(errorMsg)
     return r

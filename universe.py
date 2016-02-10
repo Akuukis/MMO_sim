@@ -23,7 +23,7 @@ def rndMaterials(solidsOther, MetalsIsotopes):
     weights.append(1 - weights[0] - weights[1])
     return weights
 
-def main(tick, config):
+def main(tick, config, q):
     universe = {
         "tick": 0,
         "systems": []
@@ -80,6 +80,10 @@ def main(tick, config):
     #print("\n")
     #conn.set_debuglevel(10)
 
+    # Workaround for scoping problems
+    def workaround(payload, params, msg):
+        q.put(lambda a, b, c: cp.put(payload=payload, params=params, msg=msg))
+
     # Insert universe in database
     pre = '[t' + str(universe['tick'])
     for system in universe["systems"]:
@@ -90,13 +94,13 @@ def main(tick, config):
                 urlp = urls + 'p' + str(planet["id"])
                 for moon in planet["childs"]:
                     urlm = urlp + 'm' + str(moon["id"])
-                    cp.put(payload=moon, params=pre+urlm+"]", msg='      Moon ' + urlm)
+                    workaround(payload=moon, params=pre+urlm+"]", msg='      Moon ' + urlm)
                 del planet["childs"]
-                cp.put(payload=planet, params=pre+urlp+"]", msg='    Planet ' + urlp)
+                workaround(payload=planet, params=pre+urlp+"]", msg='    Planet ' + urlp)
             del star["childs"]
-            cp.put(payload=star, params=pre+urls+"]", msg='  Star ' + urls)
+            workaround(payload=star, params=pre+urls+"]", msg='  Star ' + urls)
         del system["childs"]
-        cp.put(payload=system, params=pre+urly+"]", msg='System ' + urly)
+        workaround(payload=system, params=pre+urly+"]", msg='System ' + urly)
 
 if __name__ == "__main__":
     main()
