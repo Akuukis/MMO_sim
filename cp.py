@@ -1,17 +1,16 @@
 
 import requests
+import json
+from jsmin import jsmin
 from pprintpp import pprint as pp
 
-# Clusterpoint connection data
-host = "192.168.7.58"
-port = "5580"
-path = "v4/1/massive"
-url = "http://" + host + ":" + port + "/" + path
-username = "root"
-password = "password"
+# Create 'cp_config.json' from 'cp_config.json.example'
+with open('cp_config.json') as data_file:
+    con = json.loads(jsmin(data_file.read()))
+url = "http://" + con['host'] + ":" + con['port'] + "/v4/" + str(con['userid']) + "/" + con['db']
 
 def put(payload, params='', msg=None, errorMsg=None):
-    r = requests.post(url + params, json=payload, auth=(username, password)).json()
+    r = requests.post(url + params, json=payload, auth=(con['username'], con['password'])).json()
     if not r['error']:
         if msg:
             print(msg)
@@ -22,8 +21,7 @@ def put(payload, params='', msg=None, errorMsg=None):
     return r
 
 def query(payload, msg=None, errorMsg=None):
-    print(url)
-    r = requests.post(url + '/_query', data=payload, auth=(username, password)).json()
+    r = requests.post(url + '/_query', data=payload, auth=(con['username'], con['password'])).json()
     if not r['error']:
         if msg:
             print(msg)

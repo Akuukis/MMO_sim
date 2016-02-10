@@ -6,6 +6,7 @@ import json
 import threading
 import importlib
 import time
+import traceback
 from queue import Queue
 from jsmin import jsmin
 from pprintpp import pprint as pp
@@ -252,22 +253,36 @@ def worker():
     while True:
         libraryOrFn = q.get()
         start = ms()
-        if type(libraryOrFn) == "string":
-            part = importlib.__import__(libraryOrFn)
-            log = part.main(tick, config)
-            with lock:
-                print("       %7.5f for %s." % (ms() - start, libraryOrFn, log))
-        elif type(libraryOrFn) == "function":
-            log = libraryOrFn(tick, config)
-            with lock:
-                print("       %7.5f for %s." % (ms() - start, log))
-        q.task_done()
+        if libraryOrFn == False:
+            q.task_done()
+            break  # Die
+        elif type(libraryOrFn) is str:
+            try:
+                part = importlib.__import__(libraryOrFn)
+                log = part.main(tick, config)
+                with lock:
+                    print("       %7.5f for %s." % (ms() - start, libraryOrFn, log))
+            except Exception as e:
+                with lock:
+                    print("Error for "+str(libraryOrFn)+": "+str(e))
+                    traceback.print_exc()
+            finally:
+                q.task_done()
+        elif type(libraryOrFn) is callable:
+            try:
+                log = libraryOrFn(tick, config)
+                with lock:
+                    print("       %7.5f for %s." % (ms() - start, log))
+            except Exception as e:
+                with lock:
+                    print("Error for "+str(libraryOrFn)+": "+str(e))
+                    traceback.print_exc()
+            finally:
+                q.task_done()
+        else:
+            print('Unknown object in queue for '+str(type(libraryOrFn))+" "+str(libraryOrFn))
 
 q = Queue()
-for i in range(config['num_worker_threads']):
-     t = Thread(target=worker)
-     t.start()
-
 while True:
     # Reload stuff ############################################################
 
@@ -275,6 +290,11 @@ while True:
 
     with open('config.json') as data_file:
         config = json.loads(jsmin(data_file.read()))
+
+    # Respawn workers
+    for i in range(config['num_worker_threads']):
+         t = threading.Thread(target=worker)
+         t.start()
 
     # Update universe, create or age systems, stars, planets
     q.put('universe')
@@ -291,8 +311,10 @@ while True:
     # Ship movement
     q.put('ships')
 
-    # Wait for all threads
+    # Wait for all threads and kill all workers
     q.join()
+    for i in range(config['num_worker_threads']):
+        q.put(False)
 
     # Update tick
     tick = tick + 1
