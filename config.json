@@ -1,4 +1,6 @@
 {
+    /*#### In-game ##########################################################*/
+
     /* If not otherwise stated, array-2 means [average, deviation], and thus */
     /* amount = math.floor(avg * random.range(1/dev, dev)) */
 
@@ -53,6 +55,10 @@
     "lightSecondsPerTick": 200,
 
     /* TODO */
+
+    /*#### Performance and technical ########################################*/
+
+    "num_worker_threads": 5,
 
     /* Don't touch :D */
     "__noCommaHere": true
