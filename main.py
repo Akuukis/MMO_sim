@@ -6,6 +6,7 @@ import json
 import threading
 import importlib
 import time
+import traceback
 from queue import Queue
 from jsmin import jsmin
 from pprintpp import pprint as pp
@@ -249,24 +250,35 @@ lock = threading.Lock()
 def worker():
     while True:
         libraryOrFn = q.get()
-        print(libraryOrFn)
         start = ms()
         if libraryOrFn == False:
             q.task_done()
             break  # Die
         elif type(libraryOrFn) is str:
-            part = importlib.__import__(libraryOrFn)
-            log = part.main(tick, config)
-            with lock:
-                print("       %7.5f for %s." % (ms() - start, libraryOrFn, log))
-            q.task_done()
+            try:
+                part = importlib.__import__(libraryOrFn)
+                log = part.main(tick, config)
+                with lock:
+                    print("       %7.5f for %s." % (ms() - start, libraryOrFn, log))
+            except Exception as e:
+                with lock:
+                    print("Error for "+str(libraryOrFn)+": "+str(e))
+                    traceback.print_exc()
+            finally:
+                q.task_done()
         elif type(libraryOrFn) is callable:
-            log = libraryOrFn(tick, config)
-            with lock:
-                print("       %7.5f for %s." % (ms() - start, log))
-            q.task_done()
+            try:
+                log = libraryOrFn(tick, config)
+                with lock:
+                    print("       %7.5f for %s." % (ms() - start, log))
+            except Exception as e:
+                with lock:
+                    print("Error for "+str(libraryOrFn)+": "+str(e))
+                    traceback.print_exc()
+            finally:
+                q.task_done()
         else:
-            print('Error for '+str(type(libraryOrFn))+" "+str(libraryOrFn))
+            print('Unknown object in queue for '+str(type(libraryOrFn))+" "+str(libraryOrFn))
 
 q = Queue()
 while True:
