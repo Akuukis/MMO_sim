@@ -6,10 +6,13 @@ import json
 import threading
 import importlib
 import time
+from datetime import datetime
 import traceback
 from queue import Queue
 from jsmin import jsmin
 from pprintpp import pprint as pp
+
+import cp
 
 # Resources ###################################################################
 
@@ -131,7 +134,6 @@ def choose_weighted(array):
 
 
 def ms():
-    from datetime import datetime
     dt = datetime.utcnow()
     return dt.hour * 60 * 60 + dt.minute * 60 + dt.second + dt.microsecond / 1000000
 
@@ -294,6 +296,12 @@ while True:
          t = threading.Thread(target=worker)
          t.start()
 
+    # Get tick
+    try:
+        tick = cp.query(payload="SELECT COUNT() FROM massive WHERE object == 'tick' GROUP BY object LIMIT 0, 1")["results"][0]["COUNT()"]
+    except KeyError:
+        tick = 0
+
     # Update universe, create or age systems, stars, planets
     q.put('universe')
 
@@ -315,7 +323,8 @@ while True:
         q.put(False)
 
     # Update tick
-    tick = tick + 1
-    print("%5d: %7.5f total." % (tick, ms() - start))
-    time.sleep(0.01)
+    cp.put(payload={'object': 'tick', 'value': str(datetime.utcnow()), 'last': start})
+
+    print("# %5d: %7.5f total." % (tick, ms() - start))
+    # time.sleep(2)
     # tick ends ###################################################################
