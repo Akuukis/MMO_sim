@@ -95,5 +95,5 @@ while True:
     cp.put(payload={'object': 'tick', 'value': time.time(), 'last': start})
 
     print("# %5d: %7.5f total." % (tick, time.time() - start))
-    # time.sleep(2)
+    time.sleep(config['pauseTicks'])
     # tick ends ###################################################################

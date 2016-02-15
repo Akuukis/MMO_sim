@@ -60,6 +60,7 @@
     /*#### Performance and technical ########################################*/
 
     "num_worker_threads": 5,
+    "pauseTicks": 5,
 
     /* Don't touch :D */
     "__noCommaHere": true
