@@ -263,7 +263,7 @@ def worker():
                 part = importlib.__import__(libraryOrFn)
                 log = part.main(tick, config, q)
                 with lock:
-                    print("       %7.5f for %s: %s" % (ms() - start, libraryOrFn, log))
+                    print("> %7.5f for %s: %s" % (ms() - start, libraryOrFn, log))
             except Exception as e:
                 with lock:
                     print("Error for "+str(libraryOrFn)+": "+str(e))
@@ -274,7 +274,7 @@ def worker():
             try:
                 log = libraryOrFn(tick, config, q)
                 with lock:
-                    print("\n%s: %7.5f for %s." % (str(libraryOrFn), ms() - start, log))
+                    print("~ %7.5f for %s (%s)" % (ms() - start, log, str(libraryOrFn)))
             except Exception as e:
                 with lock:
                     print("Error for "+str(libraryOrFn)+": "+str(e))
