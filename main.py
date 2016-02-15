@@ -133,11 +133,6 @@ def choose_weighted(array):
 # routines ####################################################################
 
 
-def ms():
-    dt = datetime.utcnow()
-    return dt.hour * 60 * 60 + dt.minute * 60 + dt.second + dt.microsecond / 1000000
-
-
 def upkeep_population(colony):
     size = colony.population
     for key, amount in colony.storage.goods:
@@ -254,7 +249,7 @@ lock = threading.Lock()
 def worker():
     while True:
         libraryOrFn = q.get()
-        start = ms()
+        start = time.time()
         if libraryOrFn == False:
             q.task_done()
             break  # Die
@@ -263,7 +258,7 @@ def worker():
                 part = importlib.__import__(libraryOrFn)
                 log = part.main(tick, config, q)
                 with lock:
-                    print("> %7.5f for %s: %s" % (ms() - start, libraryOrFn, log))
+                    print("> %7.5f for %s: %s" % (time.time() - start, libraryOrFn, log))
             except Exception as e:
                 with lock:
                     print("Error for "+str(libraryOrFn)+": "+str(e))
@@ -274,7 +269,7 @@ def worker():
             try:
                 log = libraryOrFn(tick, config, q)
                 with lock:
-                    print("~ %7.5f for %s (%s)" % (ms() - start, log, str(libraryOrFn)))
+                    print("~ %7.5f for %s (%s)" % (time.time() - start, log, str(libraryOrFn)))
             except Exception as e:
                 with lock:
                     print("Error for "+str(libraryOrFn)+": "+str(e))
@@ -286,7 +281,7 @@ q = Queue()
 while True:
     # Reload stuff ############################################################
 
-    start = ms()
+    start = time.time()
 
     with open('config.json') as data_file:
         config = json.loads(jsmin(data_file.read()))
@@ -323,8 +318,8 @@ while True:
         q.put(False)
 
     # Update tick
-    cp.put(payload={'object': 'tick', 'value': str(datetime.utcnow()), 'last': start})
+    cp.put(payload={'object': 'tick', 'value': time.time(), 'last': start})
 
-    print("# %5d: %7.5f total." % (tick, ms() - start))
+    print("# %5d: %7.5f total." % (tick, time.time() - start))
     # time.sleep(2)
     # tick ends ###################################################################
