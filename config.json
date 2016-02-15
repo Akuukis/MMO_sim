@@ -11,6 +11,7 @@
 
     /***** Static object generation (systems, stars, planets, moons) */
     /* Amounts */
+    "systemsVolatility": 10, /* Max systems to generate/destroy per tick */
     "systems": [1000, 1.05],
     "stars": [2, 3.0],
     "planets": [6, 2.0],
