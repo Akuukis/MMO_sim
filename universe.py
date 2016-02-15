@@ -7,20 +7,25 @@ from pprintpp import pprint as pp
 import cp
 import utils
 
-def rndCoords(distance, zFlatness):
+def rndCoords(distance, zFlatness, center={"x":0,"y":0,"z":0}):
     distance = random.randrange(distance[0],distance[1])
     x = utils.rnd()
     y = utils.rnd()
     z = utils.rnd() * zFlatness
     l = math.fabs(x**3 + y**3 + z**3)**(1/3)
     k = distance / l
-    return {"x":float(x*k), "y":float(y*k), "z":float(z*k)}
+    return {
+        "radius":distance,
+        "x":float(x*k+center["x"]),
+        "y":float(y*k+center["y"]),
+        "z":float(z*k+center["z"])
+    }
 
 def rndMaterials(solidsOther, MetalsIsotopes):
     weights = [] # Material weights, [0]: Solids, [1]: Metals, [2]: Isotopes
     weights.append(round(utils.dist_skewedLeft(solidsOther), 2))
     weights.append(round(utils.dist_skewedLeft(MetalsIsotopes) * (1-weights[0]), 2))
-    weights.append(1 - weights[0] - weights[1])
+    weights.append(round(1 - weights[0] - weights[1], 2))
     return weights
 
 def main(tick, config, q):
@@ -44,34 +49,33 @@ def main(tick, config, q):
             stars = []
             for star in range(0, int(utils.dist_skewedLeft(config['stars']))):
                 urls = urly + 's' + str(star)
+                coordss = rndCoords(config['starDistance'], config['zFlatness'])
                 planets = []
                 for planet in range(0, int(utils.dist_skewedLeft(config['planets']))):
                     urlp = urls + 'p' + str(planet)
+                    coordsp = rndCoords(config['planetDistance'], config['zFlatness'], coordss)
                     moons = []
                     for moon in range(0, int(utils.dist_skewedLeft(config['moons']))):
                         urlm = urlp + 'm' + str(moon)
                         workaround(payload={
-                                "id": moon,
                                 "object": "moon",
-                                "system_coords": rndCoords(config['moonDistance'], config['zFlatness']),
+                                "system_coords": rndCoords(config['moonDistance'], config['zFlatness'], coordsp),
                                 'type': ['Gas', 'Ice', 'Rock', 'Iron', 'Mix'][utils.choose_weighted(config['moonType'])],
                                 'size': round(utils.dist_skewedLeft(config['moonSize']), 0),
-                                'habitability': round(utils.dist_skewedLeft(config['moonHabitability']), 0),
-                                'richness': round(utils.dist_skewedLeft(config['moonRichness']), 0),
+                                'habitability': round(utils.dist_skewedLeft(config['moonHabitability']), 1),
+                                'richness': round(utils.dist_skewedLeft(config['moonRichness']), 1),
                                 'materials': rndMaterials(config['moonWeightSolidsOther'], config['moonWeightMetalsIsotopes']),
                             },
                             params=pre+urlm+"]",
                             msg='      Moon ' + pre+urlm+"]"
                         )
                     workaround(payload={
-                            "id": planet,
                             "object": "planet",
                             "system_coords": rndCoords(config['planetDistance'], config['zFlatness']),
-                            "childs": moons,
                             'type': ['Gas', 'Ice', 'Rock', 'Iron', 'Mix'][utils.choose_weighted(config['planetType'])],
                             'size': round(utils.dist_skewedLeft(config['planetSize']), 0),
-                            'habitability': round(utils.dist_skewedLeft(config['planetHabitability']), 0),
-                            'richness': round(utils.dist_skewedLeft(config['planetRichness']), 0),
+                            'habitability': round(utils.dist_skewedLeft(config['planetHabitability']), 1),
+                            'richness': round(utils.dist_skewedLeft(config['planetRichness']), 1),
                             'materials': rndMaterials(config['planetWeightSolidsOther'], config['planetWeightMetalsIsotopes']),
                         },
                         params=pre+urlp+"]",
@@ -81,13 +85,11 @@ def main(tick, config, q):
                         "id": star,
                         "object": "star",
                         "system_coords": rndCoords(config['starDistance'], config['zFlatness']),
-                        "childs": planets
                     },
                     params=pre+urls+"]",
                     msg='  Star ' + pre+urls+"]"
                 )
             workaround(payload={
-                "id": system,
                 "object": "system",
                 "universe_coords": {
                     "x": random.randrange(config['x'][0],config['x'][1]),
