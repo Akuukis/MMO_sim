@@ -50,7 +50,10 @@ def upgrade_colony(colony, faction):
             colony.storage.solids -= 1000
 
 
-def main(tick):
+def main(tick, config, q):
+    return  # Drafted, TODO
+
+
     item = {
         'type': 'ship' or 'part',
         'subtype': 123456789,  # id of model.

@@ -1,8 +1,7 @@
+def main(tick, config, q):
+    return  # Drafted, TODO
 
 
-
-
-def main(tick):
     pc = {
         'id': 1,
         'coords': [0, 0, 0]
