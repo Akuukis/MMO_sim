@@ -1,113 +1,106 @@
 #!/usr/bin/python3
 
+import math
 import random
-import requests
-import copy
 from pprintpp import pprint as pp
 
+import cp
+import utils
 
-def main(tick):
-    def generateSystemName():
-        names = ["Stellar", "Forge", "Sol", "Indeae", "Caseopae", "Alpha", "Centauris", "HTC", "Eagle"]
-        return random.choice(names) + " " + random.choice(names)
+def rndCoords(distance, zFlatness):
+    distance = random.randrange(distance[0],distance[1])
+    x = utils.rnd()
+    y = utils.rnd()
+    z = utils.rnd() * zFlatness
+    l = math.fabs(x**3 + y**3 + z**3)**(1/3)
+    k = distance / l
+    return {"x":float(x*k), "y":float(y*k), "z":float(z*k)}
 
-    def generateStarName():
-        names = ["Stellar", "Forge", "Sol", "Indeae", "Caseopae", "Alpha", "Centauris", "HTC", "Eagle"]
-        return random.choice(names) + " " + random.choice(names)
+def rndMaterials(solidsOther, MetalsIsotopes):
+    weights = [] # Material weights, [0]: Solids, [1]: Metals, [2]: Isotopes
+    weights.append(round(utils.dist_skewedLeft(solidsOther), 2))
+    weights.append(round(utils.dist_skewedLeft(MetalsIsotopes) * (1-weights[0]), 2))
+    weights.append(1 - weights[0] - weights[1])
+    return weights
 
-    def generatePlanetName():
-        names = ["Stellar", "Forge", "Sol", "Indeae", "Caseopae", "Alpha", "Centauris", "HTC", "Eagle"]
-        return random.choice(names) + " " + random.choice(names)
+def main(tick, config, q):
+    # Workaround for scoping problems
+    def workaround(payload, params, msg):
+        q.put(lambda a, b, c: cp.put(payload=payload, params=params, msg=msg))
 
-    def generateMoonName():
-        names = ["Stellar", "Forge", "Sol", "Indeae", "Caseopae", "Alpha", "Centauris", "HTC", "Eagle"]
-        return random.choice(names) + " " + random.choice(names)
+    # How many systems are there?
+    count = int(cp.query(payload="SELECT * FROM massive WHERE object == 'system' LIMIT 0, 0")["hits"])
 
-    def post(url, payload, msg=None, errorMsg=None):
-        r = requests.post(url, json=payload, auth=(username, password)).json()
-        if not r['error']:
-            if msg:
-                print(msg)
-        else:
-            pp(r)
-            if errorMsg:
-                print(errorMsg)
-        return r
+    # How many we want?
+    want = int(utils.dist_skewedLeft(config['systems']))
 
-    universe = {}
-    universe["starsystems"]= []
-    number_of_max_stars = 10
-    number_of_max_planets = 10
-    number_of_max_moons = 10
+    if want == count:
+        pass
+    elif want >= count:
+        # Generate up to X more systems per tick
+        pre = '[t' + str(tick)
+        for system in range(0, min(config['systemsVolatility'], want - count)):
+            urly = 'y' + str(system)
+            stars = []
+            for star in range(0, int(utils.dist_skewedLeft(config['stars']))):
+                urls = urly + 's' + str(star)
+                planets = []
+                for planet in range(0, int(utils.dist_skewedLeft(config['planets']))):
+                    urlp = urls + 'p' + str(planet)
+                    moons = []
+                    for moon in range(0, int(utils.dist_skewedLeft(config['moons']))):
+                        urlm = urlp + 'm' + str(moon)
+                        workaround(payload={
+                                "id": moon,
+                                "object": "moon",
+                                "system_coords": rndCoords(config['moonDistance'], config['zFlatness']),
+                                'type': ['Gas', 'Ice', 'Rock', 'Iron', 'Mix'][utils.choose_weighted(config['moonType'])],
+                                'size': round(utils.dist_skewedLeft(config['moonSize']), 0),
+                                'habitability': round(utils.dist_skewedLeft(config['moonHabitability']), 0),
+                                'richness': round(utils.dist_skewedLeft(config['moonRichness']), 0),
+                                'materials': rndMaterials(config['moonWeightSolidsOther'], config['moonWeightMetalsIsotopes']),
+                            },
+                            params=pre+urlm+"]",
+                            msg='      Moon ' + pre+urlm+"]"
+                        )
+                    workaround(payload={
+                            "id": planet,
+                            "object": "planet",
+                            "system_coords": rndCoords(config['planetDistance'], config['zFlatness']),
+                            "childs": moons,
+                            'type': ['Gas', 'Ice', 'Rock', 'Iron', 'Mix'][utils.choose_weighted(config['planetType'])],
+                            'size': round(utils.dist_skewedLeft(config['planetSize']), 0),
+                            'habitability': round(utils.dist_skewedLeft(config['planetHabitability']), 0),
+                            'richness': round(utils.dist_skewedLeft(config['planetRichness']), 0),
+                            'materials': rndMaterials(config['planetWeightSolidsOther'], config['planetWeightMetalsIsotopes']),
+                        },
+                        params=pre+urlp+"]",
+                        msg='    Planet ' + pre+urlp+"]"
+                    )
+                workaround(payload={
+                        "id": star,
+                        "object": "star",
+                        "system_coords": rndCoords(config['starDistance'], config['zFlatness']),
+                        "childs": planets
+                    },
+                    params=pre+urls+"]",
+                    msg='  Star ' + pre+urls+"]"
+                )
+            workaround(payload={
+                "id": system,
+                "object": "system",
+                "universe_coords": {
+                    "x": random.randrange(config['x'][0],config['x'][1]),
+                    "y": random.randrange(config['y'][0],config['y'][1]),
+                    "z": random.randrange(config['z'][0],config['z'][1]),
+                },},
+                params=pre+urly+"]",
+                msg='System ' + pre+urly+"]"
+            )
+    elif want <= count:
+        pass  # TODO destroy systems
 
-    # Clusterpoint connection data
-    host = "192.168.7.58"
-    username = "root"
-    password = "password"
-    port = "5580"
-    path = "v4/1/massive"
-    url = "http://" + host + ":" + port + "/" + path
-
-    for starsystemid in range (1, 1000):
-        # generate galactic coordinates
-        x = random.randrange(4,110000)
-        y = random.randrange(4,110000)
-        z = random.randrange(0,100)
-        # getting name for star system
-        newstarsystem = {"objectName": generateSystemName(), "id": starsystemid, "type": "starsystem", "x": x, "y": y, "z": z}
-        # getting stars in system
-        random_stars = random.randrange(1, number_of_max_stars)
-        stars = []
-        for starsnr in range (1, random_stars):
-            distance = random.randrange(110, 1200000)
-            newstar = {"objectName": generateStarName(), "id": starsnr, "type": "star", "distance": distance}
-            stars.append(newstar)
-            random_planets = random.randrange(1, number_of_max_planets)
-            planets = []
-            # getting planets for each star
-            for planetsnr in range (1, random_planets):
-                distance = random.randrange(110, 40320)
-                newplanet = {"objectName": generateStarName(), "id": planetsnr, "type": "planet", "distance": distance}
-                planets.append(newplanet)
-                moons = []
-                random_moons = random.randrange(1, number_of_max_moons)
-                for moonsnr in range (1, random_moons):
-                    distance = random.randrange(200000, 500000)
-                    newmoon = {"objectName": generateMoonName(), "id": moonsnr, "type": "moon", "distance": distance}
-                    moons.append(newmoon)
-                newplanet["childs"] = moons
-            newstar["childs"] = planets
-        newstarsystem["childs"] = stars
-
-        universe["starsystems"].append(newstarsystem)
-
-    #pp = pprint.PrettyPrinter(indent=4)
-    #print(pp.pprint(universe))
-    #print("\n")
-    #conn.set_debuglevel(10)
-
-    # Insert data in database
-    for starsystem in universe["starsystems"]:
-        preparestarsystem = copy.deepcopy(starsystem)  # prepare copy of dict, as we want to remove childs
-        del preparestarsystem["childs"]
-        urlid = "[" + 'y' + str(starsystem["id"]) + "]"
-        post(url + urlid, preparestarsystem, 'System ' + urlid)
-
-        for star in starsystem["childs"]:
-            preparestar = copy.deepcopy(star)
-            del preparestar["childs"]
-            urlid = "[" + 'y' + str(starsystem["id"]) + 's' + str(star["id"]) + "]"
-            post(url + urlid, preparestar, '  Star ' + urlid)
-
-            for planet in star["childs"]:
-                prepareplanet = copy.deepcopy(planet)
-                del prepareplanet["childs"]
-                urlid = "[" + 'y' + str(starsystem["id"]) + 's' + str(star["id"]) + 'p' + str(planet["id"]) + "]"
-                post(url + urlid, prepareplanet, '    Planet ' + urlid)
-
-                for moon in planet["childs"]:
-                    urlid = "[" + 'y' + str(starsystem["id"]) + 's' + str(star["id"]) + 'p' + str(planet["id"]) + 'm' + str(moon["id"]) + "]"
-                    post(url + urlid, moon, '      Moon ' + urlid)
+    return "done"
 
 if __name__ == "__main__":
     main()

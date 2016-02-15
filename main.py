@@ -6,8 +6,13 @@ import json
 import threading
 import importlib
 import time
+from datetime import datetime
+import traceback
 from queue import Queue
+from jsmin import jsmin
 from pprintpp import pprint as pp
+
+import cp
 
 # Resources ###################################################################
 
@@ -70,33 +75,35 @@ faction = {
 # Statics #####################################################################
 
 moon = {
-    'coords': [0, 0, 0],  # in LS relative to system
+    'system_coords': [0, 0, 0],  # in LS relative to system
     'type': 'Gas' or 'Ice' or 'Rock' or 'Iron' or 'Mix',  # Colonize only home planet type. Gas by none, Mix by all
     'size': 3,  # Also maxSize for colony
     'habitability': 0.9,  # Modifier to good generation for colony
     'richness': 1.5,  # Modifier to raw material generation for colony
-    'weightSolids': 0.5,  # Modifier to solid generation for colony. Solid+Metal+Radioactive = 1
-    'weightMetals': 0.3,  # Modifier to metal generation for colony. Solid+Metal+Radioactive = 1
-    'weightIsotopes': 0.2,  # Modifier to radioactive generation for colony. Solid+Metal+Radioactive = 1
+    'materials': [
+        0.5,  # Modifier to solid generation for colony. Solid+Metal+Radioactive = 1
+        0.3,  # Modifier to metal generation for colony. Solid+Metal+Radioactive = 1
+        0.2, ],  # Modifier to radioactive generation for colony. Solid+Metal+Radioactive = 1
     'colony': False
 }
 
 planet = {
     'moons': [moon, moon],
-    'coords': [0, 0, 0],  # in LS relative to system
+    'system_coords': [0, 0, 0],  # in LS relative to system
     'type': 'Gas' or 'Ice' or 'Rock' or 'Iron' or 'Mix',  # Colonize only home planet type. Gas by none, Mix by all
     'size': 10,  # = maxSize = (population + industry) for colony
     'habitability': 0.9,  # Modifier to good generation for colony
     'richness': 1.5,  # Modifier to raw material generation for colony
-    'weightSolids': 0.5,  # Modifier to solid generation for colony. Solid+Metal+Radioactive = 1
-    'weightMetals': 0.3,  # Modifier to metal generation for colony. Solid+Metal+Radioactive = 1
-    'weightIsotopes': 0.2,  # Modifier to radioactive generation for colony. Solid+Metal+Radioactive = 1
+    'materials': [
+        0.5,  # Modifier to solid generation for colony. Solid+Metal+Radioactive = 1
+        0.3,  # Modifier to metal generation for colony. Solid+Metal+Radioactive = 1
+        0.2, ],  # Modifier to radioactive generation for colony. Solid+Metal+Radioactive = 1
     'colony': False,
 }
 
 star = {
     'planets': [planet, planet],
-    'coords': [0, 0, 0],  # in LS relative to system
+    'system_coords': [0, 0, 0],  # in LS relative to system
 }
 
 system = {
@@ -127,7 +134,6 @@ def choose_weighted(array):
 
 
 def ms():
-    from datetime import datetime
     dt = datetime.utcnow()
     return dt.hour * 60 * 60 + dt.minute * 60 + dt.second + dt.microsecond / 1000000
 
@@ -239,55 +245,86 @@ def spawn_faction():
 def spawn_colony():
     pass
 
+tick = 0
 
 # lock to serialize console output
 lock = threading.Lock()
+
+# Threading
+def worker():
+    while True:
+        libraryOrFn = q.get()
+        start = ms()
+        if libraryOrFn == False:
+            q.task_done()
+            break  # Die
+        elif type(libraryOrFn) is str:
+            try:
+                part = importlib.__import__(libraryOrFn)
+                log = part.main(tick, config, q)
+                with lock:
+                    print("> %7.5f for %s: %s" % (ms() - start, libraryOrFn, log))
+            except Exception as e:
+                with lock:
+                    print("Error for "+str(libraryOrFn)+": "+str(e))
+                    traceback.print_exc()
+            finally:
+                q.task_done()
+        else:
+            try:
+                log = libraryOrFn(tick, config, q)
+                with lock:
+                    print("~ %7.5f for %s (%s)" % (ms() - start, log, str(libraryOrFn)))
+            except Exception as e:
+                with lock:
+                    print("Error for "+str(libraryOrFn)+": "+str(e))
+                    traceback.print_exc()
+            finally:
+                q.task_done()
+
 q = Queue()
-tick = 0
 while True:
     # Reload stuff ############################################################
 
     start = ms()
 
     with open('config.json') as data_file:
-        config = json.load(data_file)
+        config = json.loads(jsmin(data_file.read()))
 
-    def worker(library):
-        q.get()
-        start = ms()
-        part = importlib.__import__(library)
-        # part.main(tick)
-        with lock:
-            print("       %7.5f for %s." % (ms() - start, library))
-        q.task_done()
+    # Respawn workers
+    for i in range(config['num_worker_threads']):
+         t = threading.Thread(target=worker)
+         t.start()
 
-    def spawn_worker(library):
-        q.put(True)
-        t = threading.Thread(target=worker, args=(library,))
-        # t.daemon = True  # thread dies when main thread (only non-daemon thread) exits.
-        t.start()
-
+    # Get tick
+    try:
+        tick = cp.query(payload="SELECT COUNT() FROM massive WHERE object == 'tick' GROUP BY object LIMIT 0, 1")["results"][0]["COUNT()"]
+    except KeyError:
+        tick = 0
 
     # Update universe, create or age systems, stars, planets
-    spawn_worker('universe')
+    q.put('universe')
 
     # Check planets to spawn new Faction with Colony
-    spawn_worker('spawn_factions')
+    q.put('spawn_factions')
 
     # Production and upkeep
-    spawn_worker('economy')
+    q.put('economy')
 
     # Construction
-    spawn_worker('construction')
+    q.put('construction')
 
     # Ship movement
-    spawn_worker('ships')
+    q.put('ships')
 
-    # Wait for all threads
+    # Wait for all threads and kill all workers
     q.join()
+    for i in range(config['num_worker_threads']):
+        q.put(False)
 
     # Update tick
-    tick = tick + 1
-    print("%5d: %7.5f total." % (tick, ms() - start))
-    time.sleep(0.01)
+    cp.put(payload={'object': 'tick', 'value': str(datetime.utcnow()), 'last': start})
+
+    print("# %5d: %7.5f total." % (tick, ms() - start))
+    # time.sleep(2)
     # tick ends ###################################################################
