@@ -48,11 +48,11 @@ def main(tick, config, q):
         # upkeep_population
         size = colony['population']
         for key, amount in colony['storage']['goods'].items():
+            if size == 0:
+                break
             if colony['storage']['goods'][key] >= batch and random.random() >= config['popForeignGoods']:
                 colony['storage']['goods'][key] -= batch
                 size -= 1
-                if size == 0:
-                    break
         if colony['storage']['goods'][colony['goods']] >= size * config['popLocalPenalty'] * batch:
             colony['storage']['goods'][colony['goods']] -= size * config['popLocalPenalty'] * batch
         else:
@@ -63,18 +63,17 @@ def main(tick, config, q):
         # upkeep_industry
         size = colony['industry']
         for key, amount in colony['storage']['goods'].items():
+            if size == 0:
+                break
             if colony['storage']['goods'][key] >= batch and random.random() >= config['indForeignGoods']:
                 colony['storage']['goods'][key] -= batch
                 size -= 1
-                if size == 0:
-                    break
         if colony['storage']['solids'] >= size * config['indLocalPenalty'] * batch:
             colony['storage']['solids'] -= size * config['indLocalPenalty'] * batch
         else:
             colony['industry'] -= 1
             colony['storage']['goods'][colony['goods']] += config['indDowngradeRefund'] * config['indUpgradeGoods']
             colony['storage']['solids'] += config['indDowngradeRefund'] * config['indUpgradeSolids']
-
 
         r = cp.query(payload="\
             UPDATE massive['" + _id + "']\
