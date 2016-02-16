@@ -94,17 +94,18 @@ def main(tick, config, q):
         q.put(lambda a, b, c: upkeep(_id))
 
     # Whom production or upkeep should happen this tick?
-    luckies = cp.query(payload="\
+    r = cp.query(payload="\
         SELECT _id FROM massive\
         WHERE object == 'colony' && Math.random()<"+str(1/config['batchEconomy'])+"\
-        LIMIT 0, 999999")["results"]
+        LIMIT 0, 999999")
 
-    # Iterate through colonies
-    for lucky in luckies:
-        if random.random() < 0.5:
-            workaround_produce(lucky['_id'])
-        else:
-            workaround_upkeep(lucky['_id'])
+    if int(r['hits']) > 0:
+        # Iterate through colonies
+        for lucky in r['results']:
+            if random.random() < 0.5:
+                workaround_produce(lucky['_id'])
+            else:
+                workaround_upkeep(lucky['_id'])
 
     return 'done'
 
