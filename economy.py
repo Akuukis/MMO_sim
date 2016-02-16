@@ -20,21 +20,21 @@ def main(tick, config, q):
         # produce_goods
         goodsPerPop = float(colony['untilJoins']['habitability']) - float(colony['population']) * config['popDAR']
         goodsTotal = batch * float(colony['population']) * goodsPerPop
-        colony['storage']['goods'][colony['goods']] += goodsTotal
+        colony['storage']['goods'][colony['goods']] += int(goodsTotal)
 
         # produce_materials
         materialsPerInd = float(colony['untilJoins']['richness']) - float(colony['industry']) * config['indDAR']
         materialsTotal = batch * float(colony['industry']) * materialsPerInd
-        colony['storage']['solids'] += materialsTotal * float(colony['untilJoins']['materials'][0])
-        colony['storage']['metals'] += materialsTotal * float(colony['untilJoins']['materials'][1])
-        colony['storage']['isotopes'] += materialsTotal * float(colony['untilJoins']['materials'][2])
+        colony['storage']['solids'] += int(materialsTotal * float(colony['untilJoins']['materials'][0]))
+        colony['storage']['metals'] += int(materialsTotal * float(colony['untilJoins']['materials'][1]))
+        colony['storage']['isotopes'] += int(materialsTotal * float(colony['untilJoins']['materials'][2]))
 
         r = cp.query(payload="\
             UPDATE massive['" + _id + "']\
-            SET storage.goods['"+colony['goods']+"'] = "+str(int(colony['storage']['goods'][colony['goods']]))+",\
-                storage['solids'] = "+str(int(colony['storage']['solids']))+",\
-                storage['metals'] = "+str(int(colony['storage']['metals']))+",\
-                storage['isotopes'] = "+str(int(colony['storage']['isotopes']))+"\
+            SET storage.goods['"+colony['goods']+"'] = "+str(colony['storage']['goods'][colony['goods']])+",\
+                storage['solids'] = "+str(colony['storage']['solids'])+",\
+                storage['metals'] = "+str(colony['storage']['metals'])+",\
+                storage['isotopes'] = "+str(colony['storage']['isotopes'])+"\
         ")['results'][0]['_id']
         return 'economy: produce at ' + r
 
