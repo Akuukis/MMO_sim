@@ -1,71 +1,112 @@
-def upkeep_population(colony):
-    size = colony.population
-    for key, amount in colony.storage.goods:
-        if colony.storage.goods[key] >= 1 and random.random() >= 0.5:
-            colony.storage.goods[key] -= 1
-            size -= 1
-            if size == 0:
-                return
-    if colony.storage.goods[colony.id].amount >= 4 * size:
-        colony.storage.goods[colony.id].amount -= 4 * size
-    else:
-        degrade_population(colony)
 
+import random
+import json
 
-def upkeep_industry(colony):
-    size = colony.industry
-    for key, amount in colony.storage.goods:
-        if colony.storage.goods[key] >= 1 and random.random() >= 0.5:
-            colony.storage.goods[key] -= 1
-            size -= 1
-            if size == 0:
-                return
-    if colony.storage.solids >= 4 * size:
-        colony.storage.solids -= 4 * size
-    else:
-        degrade_industry(colony)
-
-
-def produce_goods(colony):
-    produce = 10 * colony.population * (colony.anchor.habitability - colony.population / 10)
-    colony.storage.goods[colony.id].amount += produce
-
-
-def produce_materials(colony):
-    colony.storage.solids += 10 * colony.industry * colony.anchor.richness * colony.anchor.weightSolids
-    colony.storage.metals += 10 * colony.industry * colony.anchor.richness * colony.anchor.weightMetals
-    colony.storage.isotopes += 10 * colony.industry * colony.anchor.richness * colony.anchor.weightIsotopes
-
-
-def upgrade_colony(colony, faction):
-    if colony.anchor.size < colony.population + colony.industry:
-        if colony.storage.solids >= 1000 and colony.storage.goods[colony.id].amount >= 1000:
-            notfull = colony.population < colony.anchor.habitability / 2
-            wantPopulation = faction.pref.population_industry * colony.anchor.habitability / colony.anchor.richness
-            if notfull and colony.population < wantPopulation:
-                upgrade_population(colony)
-            else:
-                upgrade_industry(colony)
-            colony.storage.goods[colony.id].amount -= 1000
-            colony.storage.solids -= 1000
-
+import cp
 
 def main(tick, config, q):
-    return  # Drafted, TODO
+    # On average, per tick:
+    # Colony produce (10 * (habitability-population/10)) local goods per population
+    # Colony produce (10 * richness * weight) every material per industry
+    # Colony upkeeps 1 unique exotic good or 4 local goods per population
+    # Colony upkeeps 1 unique exotic good or 4 solids per industry
+    def produce(_id):
+        batch = 2 * config['batchEconomy']
+        colony = cp.query(payload="\
+            SELECT goods, storage, industry, population, untilJoins\
+            FROM massive\
+            WHERE _id == '"+_id+"'")['results'][0]
+
+        # produce_goods
+        goodsPerPop = float(colony['untilJoins']['habitability']) - float(colony['population']) * config['popDAR']
+        goodsTotal = batch * float(colony['population']) * goodsPerPop
+        colony['storage']['goods'][colony['goods']] += goodsTotal
+
+        # produce_materials
+        materialsPerInd = float(colony['untilJoins']['richness']) - float(colony['industry']) * config['indDAR']
+        materialsTotal = batch * float(colony['industry']) * materialsPerInd
+        colony['storage']['solids'] += materialsTotal * float(colony['untilJoins']['materials'][0])
+        colony['storage']['metals'] += materialsTotal * float(colony['untilJoins']['materials'][1])
+        colony['storage']['isotopes'] += materialsTotal * float(colony['untilJoins']['materials'][2])
+
+        r = cp.query(payload="\
+            UPDATE massive['" + _id + "']\
+            SET storage.goods['"+colony['goods']+"'] = "+str(int(colony['storage']['goods'][colony['goods']]))+",\
+                storage['solids'] = "+str(int(colony['storage']['solids']))+",\
+                storage['metals'] = "+str(int(colony['storage']['metals']))+",\
+                storage['isotopes'] = "+str(int(colony['storage']['isotopes']))+"\
+        ")['results'][0]['_id']
+        return 'economy: produce at ' + r
+
+    def upkeep(_id):
+        batch = 2 * config['batchEconomy']
+        colony = cp.query(payload="\
+            SELECT goods, storage, industry, population, untilJoins\
+            FROM massive\
+            WHERE _id == '"+_id+"'")['results'][0]
+
+        # upkeep_population
+        size = colony['population']
+        for key, amount in colony['storage']['goods'].items():
+            if colony['storage']['goods'][key] >= batch and random.random() >= config['popForeignGoods']:
+                colony['storage']['goods'][key] -= batch
+                size -= 1
+                if size == 0:
+                    break
+        if colony['storage']['goods'][colony['goods']] >= size * config['popLocalPenalty'] * batch:
+            colony['storage']['goods'][colony['goods']] -= size * config['popLocalPenalty'] * batch
+        else:
+            colony['population'] -= 1
+            colony['storage']['goods'][colony['goods']] += config['popDowngradeRefund'] * config['popUpgradeGoods']
+            colony['storage']['solids'] += config['popDowngradeRefund'] * config['popUpgradeSolids']
+
+        # upkeep_industry
+        size = colony['industry']
+        for key, amount in colony['storage']['goods'].items():
+            if colony['storage']['goods'][key] >= batch and random.random() >= config['indForeignGoods']:
+                colony['storage']['goods'][key] -= batch
+                size -= 1
+                if size == 0:
+                    break
+        if colony['storage']['solids'] >= size * config['indLocalPenalty'] * batch:
+            colony['storage']['solids'] -= size * config['indLocalPenalty'] * batch
+        else:
+            colony['industry'] -= 1
+            colony['storage']['goods'][colony['goods']] += config['indDowngradeRefund'] * config['indUpgradeGoods']
+            colony['storage']['solids'] += config['indDowngradeRefund'] * config['indUpgradeSolids']
 
 
-    item = {
-        'type': 'ship' or 'part',
-        'subtype': 123456789,  # id of model.
-        'amount': 1
-    }
+        r = cp.query(payload="\
+            UPDATE massive['" + _id + "']\
+            SET storage['goods'] = "+json.dumps(colony['storage']['goods'])+",\
+                storage['solids'] = "+str(int(colony['storage']['solids']))+",\
+                storage['metals'] = "+str(int(colony['storage']['metals']))+",\
+                storage['isotopes'] = "+str(int(colony['storage']['isotopes']))+",\
+                population = "+str(int(colony['population']))+",\
+                industy = "+str(int(colony['industry']))+"\
+        ")['results'][0]['_id']
+        return 'economy: upkeep at ' + r
 
-    if tick % 10 == 0:
-        for colony in get_all_colonies():
-            produce_goods(colony)  # Colony produce (10 * (habitability-population/10)) local goods per population
-            produce_materials(colony)  # Colony produce (10 * richness * weight) every material per industry
-            upkeep_population(colony)  # Colony upkeeps 1 unique exotic good or 4 local goods per population
-            upkeep_industry(colony)  # Colony upkeeps 1 unique exotic good or 4 solids per industry
+    # Workaround for Python scoping
+    def workaround_produce(_id):
+        q.put(lambda a, b, c: produce(_id))
+    def workaround_upkeep(_id):
+        q.put(lambda a, b, c: upkeep(_id))
+
+    # Whom production or upkeep should happen this tick?
+    luckies = cp.query(payload="\
+        SELECT _id FROM massive\
+        WHERE object == 'colony' && Math.random()<"+str(1/config['batchEconomy'])+"\
+        LIMIT 0, 999999")["results"]
+
+    # Iterate through colonies
+    for lucky in luckies:
+        if random.random() < 0.5:
+            workaround_produce(lucky['_id'])
+        else:
+            workaround_upkeep(lucky['_id'])
+
+    return 'done'
 
 if __name__ == "__main__":
     main()
