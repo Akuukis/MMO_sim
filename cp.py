@@ -30,4 +30,4 @@ def query(payload, msg=None, errorMsg=None):
         if errorMsg:
             return errorMsg
         else:
-            return False
+            return r

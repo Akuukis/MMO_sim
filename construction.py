@@ -1,4 +1,7 @@
-def main(tick):
+def main(tick, config, q):
+	return  # Drafted, TODO
+
+
 	if tick % 50 == 0:
 	    for faction in get_all_factions():
 	        for colony in faction.colonies:

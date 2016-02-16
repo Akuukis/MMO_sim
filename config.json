@@ -38,15 +38,15 @@
 
     /***** Faction (and initial colony) spawning */
     /* Amounts */
-    "avgColonies": 100,
+    "factions": [100, 1.1],
     /* Spawn probability per planet */
-    "optimalDistance": [480, 2], /* from-to, weighted: at center best */
+    "optimalDistance": [480, 2], /* weighted: at center best */
     "moonCount": [2,1], /* from-to, weighted: at center best */
     /* Preferences */
-    "population_industry": [0.5,0.5], /* = math.floor(random.range(x-y,x+y)) */
-    "pacific_militaristic": [0.5,0.5], /* = math.floor(random.range(x-y,x+y)) */
-    "defence_attack": [0.5,0.5], /* = math.floor(random.range(x-y,x+y)) */
-    "growth_expand": [0.5,0.5], /* = math.floor(random.range(x-y,x+y)) */
+    "population_industry": [0.5,0.5], /* flat, At what ratio (weighted by habitability and richness) to keep industry */
+    "pacific_militaristic": [0.5,0.5], /* flat, Size of warfleet to keep */
+    "defence_attack": [0.5,0.5], /* flat, Ratio of created warships to dedicate for defence */
+    "growth_expand": [0.5,0.5], /*  flat, At what % of optimalPopulation to grow further or create settler */
 
     /***** Economy */
     /* TODO */
@@ -60,6 +60,7 @@
     /*#### Performance and technical ########################################*/
 
     "num_worker_threads": 5,
+    "pauseTicks": 5,
 
     /* Don't touch :D */
     "__noCommaHere": true

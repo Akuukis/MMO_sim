@@ -75,7 +75,7 @@ while True:
     q.put('universe')
 
     # Check planets to spawn new Faction with Colony
-    q.put('spawn_factions')
+    q.put('factions')
 
     # Production and upkeep
     q.put('economy')
@@ -95,5 +95,5 @@ while True:
     cp.put(payload={'object': 'tick', 'value': time.time(), 'last': start})
 
     print("# %5d: %7.5f total." % (tick, time.time() - start))
-    # time.sleep(2)
+    time.sleep(config['pauseTicks'])
     # tick ends ###################################################################
