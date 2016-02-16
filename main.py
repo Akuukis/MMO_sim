@@ -75,7 +75,7 @@ while True:
     q.put('universe')
 
     # Check planets to spawn new Faction with Colony
-    q.put('spawn_factions')
+    q.put('factions')
 
     # Production and upkeep
     q.put('economy')
