@@ -43,7 +43,7 @@ def worker():
             try:
                 log = libraryOrFn(tick, config, q)
                 with lock:
-                    print("~ %7.5f for %s (%s)" % (time.time() - start, log, str(libraryOrFn)))
+                    print("~ %7.5f for %s" % (time.time() - start, log))
             except Exception as e:
                 with lock:
                     print("Error for "+str(libraryOrFn)+": "+str(e))
