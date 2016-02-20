@@ -4,6 +4,9 @@
     /* If not otherwise stated, array-2 means [average, deviation], and thus */
     /* amount = math.floor(avg * random.range(1/dev, dev)) */
 
+    /***** Time stuff */
+    "batchEconomy": 10, /* Produce OR upkeep happens on random 1/x colonies x times */
+
     /***** Universe-wide stuff */
     "x": [0, 110000], /* from-to */
     "y": [0, 110000], /* from-to */
@@ -49,11 +52,25 @@
     "growth_expand": [0.5,0.5], /*  flat, At what % of optimalPopulation to grow further or create settler */
 
     /***** Economy */
-    /* TODO */
+    "popDAR": 0.1, /* Diminishing Average Returns, lowers habitability */
+    "popForeignGoods": 0.5,
+    "popLocalPenalty": 3,
+    "indDAR": 0.05, /* Diminishing Average Returns, lowers richness */
+    "indForeignGoods": 0.5,
+    "indLocalPenalty": 3,
 
     /***** Movement & Fightning */
     "lightYearsPerTick": 1,
     "lightSecondsPerTick": 200,
+
+    /***** Construction */
+    "popUpgradeGoods": 1000,
+    "popUpgradeSolids": 1000,
+    "popDowngradeRefund": 0.5,
+    "indUpgradeGoods": 1000,
+    "indUpgradeSolids": 1000,
+    "indDowngradeRefund": 0.5,
+
 
     /* TODO */
 
