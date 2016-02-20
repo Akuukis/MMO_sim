@@ -86,6 +86,7 @@ def main(tick, config, q):
         ")['results'][0]['_id']
         return 'economy: upkeep at ' + r
 
+
     # Workaround for Python scoping
     def workaround_produce(_id):
         q.put(lambda a, b, c: produce(_id))
@@ -95,7 +96,7 @@ def main(tick, config, q):
     # Whom production or upkeep should happen this tick?
     r = cp.query(payload="\
         SELECT _id FROM massive\
-        WHERE object == 'colony' && population > 0 && Math.random()<"+str(1/config['batchEconomy'])+"\
+        WHERE object == 'colony' && faction && population > 0 && Math.random()<"+str(1/config['batchEconomy'])+"\
         LIMIT 0, 999999")
 
     if int(r['hits']) > 0:

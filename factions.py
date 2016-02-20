@@ -7,6 +7,25 @@ def main(tick, config, q):
     # Delete 'empty' factions with no colonies
     pass  # TODO
 
+    # Abandon depopulation colonies
+    def abandon(_id):
+        r = cp.query(payload="\
+            UPDATE massive['" + _id + "']\
+            SET faction = null",
+            msg='economy: abandon colony '+_id)['results'][0]['_id']
+        return 'economy: upkeep at ' + r
+
+    def workaround_abandon(_id):
+        q.put(lambda a, b, c: abandon(_id))
+
+    colonies = cp.query(payload="\
+        SELECT _id, faction\
+        FROM massive\
+        WHERE object == 'colony' && population == 0 && faction")
+    if 'results' in colonies:
+        for colony in colonies['results']:
+            workaround_abandon(colony['_id'])
+
     # Spawn new factions with initial colony
     count = int(cp.query(payload="SELECT * FROM massive WHERE object == 'faction' LIMIT 0, 0")['hits'])
     want = int(utils.dist_skewedLeft(config['factions']))
