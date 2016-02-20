@@ -12,7 +12,7 @@ def main(tick, config, q):
     want = int(utils.dist_skewedLeft(config['factions']))
     if want > count:
         planet = cp.query(payload="\
-            SELECT _id, size\
+            SELECT _id, size, habitability, richness, materials\
             FROM massive\
             WHERE\
                 object == 'planet' &&\
@@ -44,6 +44,11 @@ def main(tick, config, q):
                 'faction': 'faction'+str(tick),
                 'anchor': planet['_id'],
                 'goods': re.search("(\w*)p", planet['_id']).group(1),
+                'untilJoins': {
+                    'habitability': planet['habitability'],
+                    'richness': planet['richness'],
+                    'materials': planet['materials'],
+                },
                 'population': 1,
                 'industry': 1,
                 'storage': {
