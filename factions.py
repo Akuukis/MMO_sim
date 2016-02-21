@@ -4,16 +4,37 @@ import cp
 import utils
 
 def main(tick, config, q):
-    # Delete 'empty' factions with no colonies
-    pass  # TODO
+    # Disband 'empty' factions with no colonies
+    def disband(_id):
+        r = cp.query(payload="SELECT *\
+            FROM massive\
+            WHERE object == 'colony' && faction == '" + _id + "'\
+            LIMIT 0, 0")
+        if int(r['hits']) == 0:
+            r = cp.query(payload="DELETE massive['" + _id + "']")['results'][0]['_id']
+            return 'factions: disband faction ' + _id
+        else:
+            return 'factions: keep faction ' + _id
+
+    def workaround_disband(_id):
+        q.put(lambda a, b, c: disband(_id))
+
+    if tick%config['cleanFactions'] == 0:
+        factions = cp.query(payload="\
+            SELECT _id\
+            FROM massive\
+            WHERE object == 'faction'\
+            LIMIT 0,9999")
+        if 'results' in factions:
+            for faction in factions['results']:
+                workaround_disband(faction['_id'])
 
     # Abandon depopulation colonies
     def abandon(_id):
         r = cp.query(payload="\
             UPDATE massive['" + _id + "']\
-            SET faction = null",
-            msg='economy: abandon colony '+_id)['results'][0]['_id']
-        return 'economy: upkeep at ' + r
+            SET faction = null")['results'][0]['_id']
+        return 'factions: abandon colony ' + r
 
     def workaround_abandon(_id):
         q.put(lambda a, b, c: abandon(_id))
@@ -56,7 +77,7 @@ def main(tick, config, q):
                     'growth_expand': utils.dist_flat(config['growth_expand']),
                 }},
                 params='[faction'+str(tick)+']',
-                msg='Spawn faction '+str(tick)
+                msg='factions: spawn faction '+str(tick)
             ))
             q.put(lambda a, b, c: cp.put(payload={
                 'object': 'colony',
@@ -79,8 +100,10 @@ def main(tick, config, q):
                     'isotopes': 0,  # For guns of ships
                     'ammo': 0  # For guns to shoot
                 }},
-                msg='Spawn colony'
+                msg='factions: spawn colony'
             ))
+
+    return 'done'
 
 if __name__ == "__main__":
     main()
