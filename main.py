@@ -19,14 +19,14 @@ while True:
     with open('config.json') as data_file:
         config = json.loads(jsmin(data_file.read()))
 
-    # Respawn workers
-    utils.spawn_workers(config['num_worker_threads'], tick, config, utils.q)
-
     # Get tick
     try:
         tick = cp.query(payload="SELECT COUNT() FROM massive WHERE object == 'tick' GROUP BY object LIMIT 0, 1")["results"][0]["COUNT()"]
     except KeyError or TypeError:
         tick = 0
+
+    # Respawn workers
+    utils.spawn_workers(config['num_worker_threads'], tick, config, utils.q)
 
     # Update universe, create or age systems, stars, planets
     utils.q.put('universe')
