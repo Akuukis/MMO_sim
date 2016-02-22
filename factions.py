@@ -4,8 +4,42 @@ import cp
 import utils
 
 def main(tick, config, q):
-    # Delete 'empty' factions with no colonies
-    pass  # TODO
+    # Disband 'empty' factions with no colonies
+    def disband(_id):
+        r = cp.query(payload="SELECT *\
+            FROM massive\
+            WHERE object == 'colony' && faction == '" + _id + "'\
+            LIMIT 0, 0")
+        if int(r['hits']) == 0:
+            r = cp.query(payload="DELETE massive['" + _id + "']")['results'][0]['_id']
+            return 'factions: disband faction ' + _id
+        else:
+            return 'factions: keep faction ' + _id
+
+    if tick%config['cleanFactions'] == 0:
+        factions = cp.query(payload="\
+            SELECT _id\
+            FROM massive\
+            WHERE object == 'faction'\
+            LIMIT 0,9999")
+        if 'results' in factions:
+            for faction in factions['results']:
+                utils.queue(disband, faction['_id'])
+
+    # Abandon depopulation colonies
+    def abandon(_id):
+        r = cp.query(payload="\
+            UPDATE massive['" + _id + "']\
+            SET faction = null")['results'][0]['_id']
+        return 'factions: abandon colony ' + r
+
+    colonies = cp.query(payload="\
+        SELECT _id, faction\
+        FROM massive\
+        WHERE object == 'colony' && population == 0 && faction")
+    if 'results' in colonies:
+        for colony in colonies['results']:
+            utils.queue(abandon,colony['_id'])
 
     # Spawn new factions with initial colony
     count = int(cp.query(payload="SELECT * FROM massive WHERE object == 'faction' LIMIT 0, 0")['hits'])
@@ -28,7 +62,7 @@ def main(tick, config, q):
             WHERE object == 'colony' && anchor == '"+planet['_id']+"'\
             GROUP BY anchor")
         if int(occupied['hits']) == 0 or (planet['size'] >= occupied['results'][0]['size'] + 2):
-            q.put(lambda a, b, c: cp.put(payload={
+            utils.queue(cp.put, payload={
                 'object': 'faction',
                 'pref': {  # 0 prefers first, 1 prefers last, 0.5 is indifferent.
                     'population_industry': utils.dist_flat(config['population_industry']),
@@ -37,9 +71,9 @@ def main(tick, config, q):
                     'growth_expand': utils.dist_flat(config['growth_expand']),
                 }},
                 params='[faction'+str(tick)+']',
-                msg='Spawn faction '+str(tick)
-            ))
-            q.put(lambda a, b, c: cp.put(payload={
+                msg='factions: spawn faction '+str(tick)
+            )
+            utils.queue(cp.put, payload={
                 'object': 'colony',
                 'faction': 'faction'+str(tick),
                 'anchor': planet['_id'],
@@ -60,8 +94,10 @@ def main(tick, config, q):
                     'isotopes': 0,  # For guns of ships
                     'ammo': 0  # For guns to shoot
                 }},
-                msg='Spawn colony'
-            ))
+                msg='factions: spawn colony'
+            )
+
+    return 'done'
 
 if __name__ == "__main__":
     main()
