@@ -3,6 +3,7 @@ import random
 import json
 
 import cp
+import utils
 
 def main(tick, config, q):
     # On average, per tick:
@@ -86,13 +87,6 @@ def main(tick, config, q):
         ")['results'][0]['_id']
         return 'economy: upkeep at ' + r
 
-
-    # Workaround for Python scoping
-    def workaround_produce(_id):
-        q.put(lambda a, b, c: produce(_id))
-    def workaround_upkeep(_id):
-        q.put(lambda a, b, c: upkeep(_id))
-
     # Whom production or upkeep should happen this tick?
     r = cp.query(payload="\
         SELECT _id FROM massive\
@@ -103,9 +97,9 @@ def main(tick, config, q):
         # Iterate through colonies
         for lucky in r['results']:
             if random.random() < 0.5:
-                workaround_produce(lucky['_id'])
+                utils.queue(produce, lucky['_id'])
             else:
-                workaround_upkeep(lucky['_id'])
+                utils.queue(upkeep, lucky['_id'])
 
     return 'done'
 

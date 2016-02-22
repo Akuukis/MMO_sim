@@ -16,9 +16,6 @@ def main(tick, config, q):
         else:
             return 'factions: keep faction ' + _id
 
-    def workaround_disband(_id):
-        q.put(lambda a, b, c: disband(_id))
-
     if tick%config['cleanFactions'] == 0:
         factions = cp.query(payload="\
             SELECT _id\
@@ -27,7 +24,7 @@ def main(tick, config, q):
             LIMIT 0,9999")
         if 'results' in factions:
             for faction in factions['results']:
-                workaround_disband(faction['_id'])
+                utils.queue(disband, faction['_id'])
 
     # Abandon depopulation colonies
     def abandon(_id):
@@ -36,16 +33,13 @@ def main(tick, config, q):
             SET faction = null")['results'][0]['_id']
         return 'factions: abandon colony ' + r
 
-    def workaround_abandon(_id):
-        q.put(lambda a, b, c: abandon(_id))
-
     colonies = cp.query(payload="\
         SELECT _id, faction\
         FROM massive\
         WHERE object == 'colony' && population == 0 && faction")
     if 'results' in colonies:
         for colony in colonies['results']:
-            workaround_abandon(colony['_id'])
+            utils.queue(abandon,colony['_id'])
 
     # Spawn new factions with initial colony
     count = int(cp.query(payload="SELECT * FROM massive WHERE object == 'faction' LIMIT 0, 0")['hits'])
@@ -68,7 +62,7 @@ def main(tick, config, q):
             WHERE object == 'colony' && anchor == '"+planet['_id']+"'\
             GROUP BY anchor")
         if int(occupied['hits']) == 0 or (planet['size'] >= occupied['results'][0]['size'] + 2):
-            q.put(lambda a, b, c: cp.put(payload={
+            utils.queue(cp.put, payload={
                 'object': 'faction',
                 'pref': {  # 0 prefers first, 1 prefers last, 0.5 is indifferent.
                     'population_industry': utils.dist_flat(config['population_industry']),
@@ -78,8 +72,8 @@ def main(tick, config, q):
                 }},
                 params='[faction'+str(tick)+']',
                 msg='factions: spawn faction '+str(tick)
-            ))
-            q.put(lambda a, b, c: cp.put(payload={
+            )
+            utils.queue(cp.put, payload={
                 'object': 'colony',
                 'faction': 'faction'+str(tick),
                 'anchor': planet['_id'],
@@ -101,7 +95,7 @@ def main(tick, config, q):
                     'ammo': 0  # For guns to shoot
                 }},
                 msg='factions: spawn colony'
-            ))
+            )
 
     return 'done'
 

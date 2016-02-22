@@ -1,57 +1,16 @@
 #!/usr/bin/python3
 
-import math
-import random
 import json
-import threading
-import importlib
 import time
-from datetime import datetime
-import traceback
-from queue import Queue
 from jsmin import jsmin
 from pprintpp import pprint as pp
 
 import cp
+import utils
 
 tick = 0
 
 # lock to serialize console output
-lock = threading.Lock()
-
-# Threading
-def worker():
-    while True:
-        libraryOrFn = q.get()
-        start = time.time()
-        if libraryOrFn == False:
-            q.task_done()
-            break  # Die
-        elif type(libraryOrFn) is str:
-            try:
-                part = importlib.__import__(libraryOrFn)
-                log = part.main(tick, config, q)
-                with lock:
-                    print("> %7.5f for %s: %s" % (time.time() - start, libraryOrFn, log))
-            except Exception as e:
-                with lock:
-                    print("Error for "+str(libraryOrFn)+": "+str(e))
-                    traceback.print_exc()
-            finally:
-                q.task_done()
-        else:
-            try:
-                log = libraryOrFn(tick, config, q)
-                with lock:
-                    print("~ %7.5f for %s" % (time.time() - start, log))
-            except Exception as e:
-                with lock:
-                    print("Error for "+str(libraryOrFn)+": "+str(e))
-                    traceback.print_exc()
-            finally:
-                q.task_done()
-
-q = Queue()
 while True:
     # Reload stuff ############################################################
 
@@ -61,9 +20,7 @@ while True:
         config = json.loads(jsmin(data_file.read()))
 
     # Respawn workers
-    for i in range(config['num_worker_threads']):
-         t = threading.Thread(target=worker)
-         t.start()
+    utils.spawn_workers(config['num_worker_threads'], tick, config, utils.q)
 
     # Get tick
     try:
@@ -72,24 +29,23 @@ while True:
         tick = 0
 
     # Update universe, create or age systems, stars, planets
-    q.put('universe')
+    utils.q.put('universe')
 
     # Check planets to spawn new Faction with Colony
-    q.put('factions')
+    utils.q.put('factions')
 
     # Production and upkeep
-    q.put('economy')
+    utils.q.put('economy')
 
     # Construction
-    q.put('construction')
+    utils.q.put('construction')
 
     # Ship movement
-    q.put('ships')
+    utils.q.put('ships')
 
     # Wait for all threads and kill all workers
-    q.join()
-    for i in range(config['num_worker_threads']):
-        q.put(False)
+    utils.q.join()
+    utils.kill_workers(config['num_worker_threads'])
 
     # Update tick
     cp.put(payload={'object': 'tick', 'value': time.time(), 'last': start})
