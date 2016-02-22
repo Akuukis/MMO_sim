@@ -78,7 +78,7 @@
 
     "num_worker_threads": 5,
     "cleanFactions": 50, /* Every x ticks check for empty factions */
-    "pauseTicks": 5,
+    "pauseTicks": 0,
 
     /* Don't touch :D */
     "__noCommaHere": true

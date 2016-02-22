@@ -50,7 +50,7 @@ def worker(*args):
                 q.task_done()
         else:
             try:
-                log = libraryOrFn(*args)
+                log = libraryOrFn()
                 with lock:
                     print("~ %7.5f for %s" % (time.time() - start, log))
             except Exception as e:
@@ -69,6 +69,9 @@ def spawn_workers(n, *args):
 def kill_workers(n):
     for i in range(n):
         q.put(False)
+
+def queue(fn, *args, **kwargs):
+    q.put(lambda: fn(*args, **kwargs))
 
 def main(tick):
     pass

@@ -29,10 +29,6 @@ def rndMaterials(solidsOther, MetalsIsotopes):
     return weights
 
 def main(tick, config, q):
-    # Workaround for scoping problems
-    def workaround(payload, params, msg):
-        q.put(lambda a, b, c: cp.put(payload=payload, params=params, msg=msg))
-
     # How many systems are there?
     count = int(cp.query(payload="SELECT * FROM massive WHERE object == 'system' LIMIT 0, 0")["hits"])
 
@@ -57,7 +53,7 @@ def main(tick, config, q):
                     moons = []
                     for moon in range(0, int(utils.dist_skewedLeft(config['moons']))):
                         urlm = urlp + 'm' + str(moon)
-                        workaround(payload={
+                        utils.queue(cp.put, payload={
                                 "object": "moon",
                                 "system_coords": rndCoords(config['moonDistance'], config['zFlatness'], coordsp),
                                 'type': ['Gas', 'Ice', 'Rock', 'Iron', 'Mix'][utils.choose_weighted(config['moonType'])],
@@ -69,7 +65,7 @@ def main(tick, config, q):
                             params=pre+urlm+"]",
                             msg='      Moon ' + pre+urlm+"]"
                         )
-                    workaround(payload={
+                    utils.queue(cp.put, payload={
                             "object": "planet",
                             "system_coords": rndCoords(config['planetDistance'], config['zFlatness']),
                             'type': ['Gas', 'Ice', 'Rock', 'Iron', 'Mix'][utils.choose_weighted(config['planetType'])],
@@ -81,7 +77,7 @@ def main(tick, config, q):
                         params=pre+urlp+"]",
                         msg='    Planet ' + pre+urlp+"]"
                     )
-                workaround(payload={
+                utils.queue(cp.put, payload={
                         "id": star,
                         "object": "star",
                         "system_coords": rndCoords(config['starDistance'], config['zFlatness']),
@@ -89,7 +85,7 @@ def main(tick, config, q):
                     params=pre+urls+"]",
                     msg='  Star ' + pre+urls+"]"
                 )
-            workaround(payload={
+            utils.queue(cp.put, payload={
                 "object": "system",
                 "universe_coords": {
                     "x": random.randrange(config['x'][0],config['x'][1]),
