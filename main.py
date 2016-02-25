@@ -29,12 +29,16 @@ while True:
     utils.spawn_workers(config['num_worker_threads'], tick, config, utils.q)
 
     # Update universe, create or age systems, stars, planets
+    # Per beat, create/destroy systems to match wanted amount
     utils.q.put('universe')
 
     # Check planets to spawn new Faction with Colony
+    # Per beat, try to spawn factions to match wanted amount (if planets allows)
+    # Per beat, check every faction for disbanding
     utils.q.put('factions')
 
     # Production and upkeep
+    # Per beat, colony 50% upkeep 2*batch or 50% produce 2*batch
     utils.q.put('economy')
 
     # Construction

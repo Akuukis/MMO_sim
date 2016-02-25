@@ -5,6 +5,12 @@
     /* amount = math.floor(avg * random.range(1/dev, dev)) */
 
     /***** Time stuff */
+    "beatUniverse": 1000, /* [1;+inf], relative speed of Universe module to other modules */
+    "beatFactions": 1, /* [1;+inf], relative speed of Factions module to other modules */
+    "beatEconomy": 1, /* [1;+inf], relative speed of Economy module to other modules */
+    "beatConstruction": 1, /* [1;+inf], relative speed of Construction module to other modules */
+    "beatShips": 1, /* [1;+inf], relative speed of Ships module to other modules */
+
     "batchEconomy": 10, /* Produce OR upkeep happens on random 1/x colonies x times */
 
     /***** Universe-wide stuff */
@@ -14,7 +20,6 @@
 
     /***** Static object generation (systems, stars, planets, moons) */
     /* Amounts */
-    "systemsVolatility": 10, /* Max systems to generate/destroy per tick */
     "systems": [1000, 1.05],
     "stars": [2, 3.0],
     "planets": [6, 2.0],
@@ -41,7 +46,7 @@
 
     /***** Faction (and initial colony) spawning */
     /* Amounts */
-    "factions": [100, 1.1],
+    "factions": 100,
     /* Spawn probability per planet */
     "optimalDistance": [480, 2], /* weighted: at center best */
     "moonCount": [2,1], /* from-to, weighted: at center best */
