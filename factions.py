@@ -69,15 +69,16 @@ def main(tick, config, q):
                         'richness': planet[n]['richness'],
                         'materials': planet[n]['materials'],
                     },
-                    'population': 1,
-                    'industry': 1,
+                    'population': config['initPop'],
+                    'industry': config['initInd'],
                     'storage': {
                         'goods': {
-                            re.search("(\w*)p", planet[n]['_id']).group(1): 100,
+                            re.search("(\w*)p", planet[n]['_id']).group(1): config['initGoodsLocal'],
+                            'genesis': config['initGoodsGenesis'],
                         },
-                        'solids': 100,  # Upkeep for industry
-                        'metals': 0,  # For structure of skips
-                        'isotopes': 0,  # For guns of ships
+                        'solids': config['initSolids'],  # Upkeep for industry
+                        'metals': config['initMetals'],  # For structure of skips
+                        'isotopes': config['initIsotopes'],  # For guns of ships
                         'ammo': 0  # For guns to shoot
                     }},
                     msg='factions: spawn colony'

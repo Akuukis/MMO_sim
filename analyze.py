@@ -50,6 +50,7 @@ SELECT\
     SUM(population),\
     COUNT(),\
     AVG(storage.goods[goods])\
+    AVG(Object.keys(storage.goods).reduce(function(a,b){return a+(storage.goods[b]||0)},0)) as 'AVG(allGoods)'\
 FROM massive\
 WHERE object == 'colony'\
 GROUP BY untilJoins.habitability\

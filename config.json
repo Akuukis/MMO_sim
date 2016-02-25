@@ -50,6 +50,14 @@
     /* Spawn probability per planet */
     "optimalDistance": [480, 2], /* weighted: at center best */
     "moonCount": [2,1], /* from-to, weighted: at center best */
+    /* Initial levels and storage */
+    "initPop": 1,
+    "initInd": 1,
+    "initGoodsLocal": 100,
+    "initGoodsGenesis": 100,
+    "initSolids": 100,
+    "initMetals": 100,
+    "initIsotopes": 100,
     /* Preferences */
     "population_industry": [0.5,0.5], /* flat, At what ratio (weighted by habitability and richness) to keep industry */
     "pacific_militaristic": [0.5,0.5], /* flat, Size of warfleet to keep */
