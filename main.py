@@ -33,7 +33,6 @@ while True:
     utils.q.put('universe')
 
     # Check planets to spawn new Faction with Colony
-    # Per tick, check every colony for abadonding
     # Per beat, spawn factions to match wanted amount (if planets allows)
     # Per beat, check every faction for disbanding
     utils.q.put('factions')

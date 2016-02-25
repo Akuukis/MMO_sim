@@ -26,21 +26,6 @@ def main(tick, config, q):
             for faction in factions['results']:
                 utils.queue(disband, faction['_id'])
 
-    # Abandon depopulation colonies
-    def abandon(_id):
-        r = cp.query(payload="\
-            UPDATE massive['" + _id + "']\
-            SET faction = null")['results'][0]['_id']
-        return 'factions: abandon colony ' + r
-
-    colonies = cp.query(payload="\
-        SELECT _id, faction\
-        FROM massive\
-        WHERE object == 'colony' && population == 0 && faction")
-    if 'results' in colonies:
-        for colony in colonies['results']:
-            utils.queue(abandon,colony['_id'])
-
     # Spawn new factions with initial colony
     count = int(cp.query(payload="SELECT * FROM massive WHERE object == 'faction' LIMIT 0, 0")['hits'])
     want = int(utils.dist_skewedLeft(config['factions']))

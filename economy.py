@@ -42,9 +42,10 @@ def main(tick, config, q):
     def upkeep(_id):
         batch = 2 * config['batchEconomy']
         colony = cp.query(payload="\
-            SELECT goods, storage, industry, population, untilJoins\
+            SELECT goods, storage, industry, population, untilJoins, faction\
             FROM massive\
             WHERE _id == '"+_id+"'")['results'][0]
+        colony['faction'] = "'"+colony['faction']+"'"
 
         # upkeep_population
         size = colony['population']
@@ -60,6 +61,8 @@ def main(tick, config, q):
             colony['population'] -= 1
             colony['storage']['goods'][colony['goods']] += config['popDowngradeRefund'] * config['popUpgradeGoods']
             colony['storage']['solids'] += config['popDowngradeRefund'] * config['popUpgradeSolids']
+            if colony['population'] == 0:
+                colony['faction'] = 'undefined'
 
         # upkeep_industry
         size = colony['industry']
@@ -83,7 +86,8 @@ def main(tick, config, q):
                 storage['metals'] = "+str(int(colony['storage']['metals']))+",\
                 storage['isotopes'] = "+str(int(colony['storage']['isotopes']))+",\
                 population = "+str(int(colony['population']))+",\
-                industy = "+str(int(colony['industry']))+"\
+                industy = "+str(int(colony['industry']))+",\
+                faction = "+str(colony['faction'])+"\
         ")['results'][0]['_id']
         return 'economy: upkeep at ' + r
 
