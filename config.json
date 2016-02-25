@@ -46,7 +46,7 @@
 
     /***** Faction (and initial colony) spawning */
     /* Amounts */
-    "factions": [100, 1.1],
+    "factions": 100,
     /* Spawn probability per planet */
     "optimalDistance": [480, 2], /* weighted: at center best */
     "moonCount": [2,1], /* from-to, weighted: at center best */
