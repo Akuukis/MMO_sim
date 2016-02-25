@@ -65,6 +65,7 @@ def main(tick, config, q):
                     'anchor': planet[n]['_id'],
                     'goods': re.search("(\w*)p", planet[n]['_id']).group(1),
                     'untilJoins': {
+                        'size': planet[n]['size'],
                         'habitability': planet[n]['habitability'],
                         'richness': planet[n]['richness'],
                         'materials': planet[n]['materials'],
@@ -81,6 +82,7 @@ def main(tick, config, q):
                         'isotopes': config['initIsotopes'],  # For guns of ships
                         'ammo': 0  # For guns to shoot
                     }},
+                    params='[colony'+str(tick)+'-'+str(tick)+'-'+str(n)+']',
                     msg='factions: spawn colony'
                 )
 
