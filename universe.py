@@ -40,7 +40,7 @@ def main(tick, config, q):
     elif want >= count:
         # Generate up to X more systems per tick
         pre = '[t' + str(tick)
-        for system in range(0, min(config['systemsVolatility'], want - count)):
+        for system in range(0, max(1, round((want - count)/config['beatUniverse'])):
             urly = 'y' + str(system)
             stars = []
             for star in range(0, int(utils.dist_skewedLeft(config['stars']))):
