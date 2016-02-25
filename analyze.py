@@ -44,15 +44,32 @@ pp(cp.query(payload="\
 
 # Breakdown of colonies by habitability
 pp(cp.query(payload="\
-SELECT\
-    untilJoins.habitability as hab,\
-    AVG(population),\
-    SUM(population),\
-    COUNT(),\
-    AVG(storage.goods[goods])\
-    AVG(Object.keys(storage.goods).reduce(function(a,b){return a+(storage.goods[b]||0)},0)) as 'AVG(allGoods)'\
-FROM massive\
-WHERE object == 'colony'\
-GROUP BY untilJoins.habitability\
-ORDER BY hab\
-LIMIT 0, 99"))
+    SELECT\
+        untilJoins.habitability as hab,\
+        AVG(population),\
+        SUM(population),\
+        COUNT(),\
+        AVG(storage.goods[goods])\
+        AVG(Object.keys(storage.goods).reduce(function(a,b){return a+(storage.goods[b]||0)},0)) as 'AVG(allGoods)'\
+    FROM massive\
+    WHERE object == 'colony'\
+    GROUP BY untilJoins.habitability\
+    ORDER BY hab\
+    LIMIT 0, 99"))
+
+# Last live colonies
+pp(cp.query(payload="\
+    SELECT\
+        faction,\
+        population,\
+        industry,\
+        untilJoins,\
+        storage.solids,\
+        storage.goods[goods],\
+        storage.goods.genesis\
+    FROM massive\
+    WHERE\
+        object == 'colony' &&\
+        population > 0\
+    ORDER BY Number((faction || '').match(/\d+/))+Number((faction || '0-0').match(/-(\d+)/)[1])/1000 DESC\
+    LIMIT 0, 20"))
