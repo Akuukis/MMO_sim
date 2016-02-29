@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 from pprintpp import pprint as pp
+
 import cp
 
 # To delete all factions and colonies, use
@@ -11,7 +12,7 @@ import cp
 # LIMIT 0, 500
 
 # All resources in universe
-pp(cp.query(payload="\
+goods = cp.query(payload="\
     SELECT\
       SUM(storage.solids) AS solids,\
       SUM(storage.metals) AS metals,\
@@ -20,19 +21,24 @@ pp(cp.query(payload="\
       SUM(Object.keys(storage.goods).reduce(function(a,b){return a+(storage['goods'][b] || 0)},0)) AS goodsAll\
     FROM massive\
     WHERE object == 'colony'\
-    GROUP BY object"))
+    GROUP BY object")['results'][0]
 
 # All objects in universe
-pp(cp.query(payload="\
+objectsRaw = cp.query(payload="\
     SELECT\
       GROUP_KEY()[0] AS object,\
       COUNT() AS count\
     FROM massive\
     GROUP BY object\
-    ORDER BY object ASC"))
+    ORDER BY object ASC")['results']
+
+objects = {}
+for o in objectsRaw:
+    objects[o['object']] = int(o['count'])
 
 # Last ticks and their length
-pp(cp.query(payload="\
+n = 10
+lastTicks = cp.query(payload="\
     SELECT\
       value,\
       last,\
@@ -40,36 +46,28 @@ pp(cp.query(payload="\
     FROM massive\
     WHERE object =='tick'\
     ORDER BY value DESC\
-    LIMIT 0, 5"))
+    LIMIT 0, "+str(n)+"")['results']
+
+length = 0
+for l in lastTicks:
+    length += l['length']/n
 
 # Breakdown of colonies by habitability
-pp(cp.query(payload="\
+colonies = cp.query(payload="\
     SELECT\
         untilJoins.habitability as hab,\
         AVG(population),\
         SUM(population),\
         COUNT(),\
         AVG(storage.goods[goods])\
-        AVG(Object.keys(storage.goods).reduce(function(a,b){return a+(storage.goods[b]||0)},0)) as 'AVG(allGoods)'\
     FROM massive\
     WHERE object == 'colony'\
     GROUP BY untilJoins.habitability\
     ORDER BY hab\
-    LIMIT 0, 99"))
+    LIMIT 0, 99")['results']
 
-# Last live colonies
-pp(cp.query(payload="\
-    SELECT\
-        faction,\
-        population,\
-        industry,\
-        untilJoins,\
-        storage.solids,\
-        storage.goods[goods],\
-        storage.goods.genesis\
-    FROM massive\
-    WHERE\
-        object == 'colony' &&\
-        population > 0\
-    ORDER BY Number((faction || '').match(/\d+/))+Number((faction || '0-0').match(/-(\d+)/)[1])/1000 DESC\
-    LIMIT 0, 20"))
+print("               tick, length(tick): #%i, %.4fs"         % (objects['tick'], length))
+print(" [systems, stars, planets, moons]: [%i, %i, %i, %i]"   % (objects['system'], objects['star'], objects['planet'], objects['moon'], ))
+print("    [goodsAll, goodsLocal], ratio: [%.1f, %.1f], %.3f" % (goods['goodsAll']/objects['colony'], goods['goodsLocal']/objects['colony'], goods['goodsLocal']/goods['goodsAll']))
+print("       [solids, metals, isotopes]: [%.1f, %.1f, %.1f]" % (goods['solids']/objects['colony'], goods['metals']/objects['colony'], goods['isotopes']/objects['colony']))
+print("          [factions, coloniesAll]: [%i, %i]"           % (objects['faction'], objects['colony']))
