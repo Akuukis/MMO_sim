@@ -26,6 +26,12 @@ def choose_weighted(array):
         if pick < cum:
             return i
 
+def rto11(minus, plus):  # (0, inf) to [-1; 1]
+    if minus > plus:
+        return -1 + plus/minus
+    else
+        return  1 - minus/plus
+
 # Threading
 lock = threading.Lock()
 q = Queue()

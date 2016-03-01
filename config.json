@@ -6,7 +6,7 @@
 
     /***** Time stuff */
     "beatUniverse": 1000, /* [1;+inf], relative speed of Universe module to other modules */
-    "beatFactions": 100, /* [1;+inf], relative speed of Factions module to other modules */
+    "beatFactions": 10, /* [1;+inf], relative speed of Factions module to other modules */
     "beatEconomy": 1, /* [1;+inf], relative speed of Economy module to other modules */
     "beatConstruction": 1, /* [1;+inf], relative speed of Construction module to other modules */
     "beatShips": 1, /* [1;+inf], relative speed of Ships module to other modules */
@@ -93,7 +93,7 @@
     /* Ship costs & properties */
     "ships": {
         /* name:    [goods,solids,metals,isotopes, def, atk,   km/t,ly/t,cargo,colony] */
-        "colonist": [ 1000,  1100,    10,      10,  50,   5,      1,   1,    0,     1],
+        "settler":  [ 1000,  1100,    10,      10,  50,   5,      1,   1,    0,     1],
         "trader":   [   10,   100,    10,      10,  50,   5,      1,   1,  100,     0],
         "hauler":   [   10,   900,    10,      10,  30,   5,      1,   1, 1000,     0],
         "striker":  [   10,    10,    50,     100,  40, 100,      2,   1,    0,     0],
