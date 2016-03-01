@@ -5,7 +5,7 @@ import cp
 
 # To delete all factions and colonies, use
 #
-# SELECT *
+# SELECT _id
 # FROM massive
 # WHERE object == 'colony' || object == 'faction'
 # LIMIT 0, 500
