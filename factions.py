@@ -1,4 +1,5 @@
 import re
+from pprintpp import pprint as pp
 
 import cp
 import utils
@@ -8,18 +9,32 @@ def main(tick, config, q):
     want = int(config['factions'])
 
     # Disband 'empty' factions with no colonies
-    def disband(_id):
-        r = cp.query(payload="SELECT *\
+    def update(_id):
+        r = cp.query(payload="\
+            SELECT\
+                COUNT() as colonies,\
+                SUM(population) AS population,\
+                SUM(industry) AS industry,\
+                SUM(storage.goods[goods]) AS goodsLocal,\
+                SUM(Object.keys(storage.goods).reduce(function(a,b){return a+(storage.goods[b]||0)},0)) AS goodsTotal\
             FROM massive\
             WHERE object == 'colony' && faction == '" + _id + "'\
-            LIMIT 0, 0")
+            GROUP BY object\
+            LIMIT 0, 99")
         if int(r['hits']) == 0:
             r = cp.query(payload="DELETE massive['" + _id + "']")['results'][0]['_id']
             return 'factions: disband faction ' + str(r)
         else:
-            return 'factions: keep faction ' + _id
+            f = r['results'][0]
+            population_industry = f['population'] / (f['population'] + f['industry'])
+            growth_expand = (f['population'] + f['industry'] - f['colonies']) / (f['population'] + f['industry'])
+            r = cp.query(payload="\
+                UPDATE massive['" + _id + "']\
+                SET approx['population_industry'] = "+str(population_industry)+",\
+                    approx['growth_expand'] = "+str(growth_expand)+"")['results'][0]['_id']
+            return 'factions: update faction ' + str(r)
 
-    def list_disband():
+    def list_update():
         factions = cp.query(payload="\
             SELECT _id\
             FROM massive\
@@ -28,10 +43,10 @@ def main(tick, config, q):
             LIMIT 0,"+str(max(1, round(want/config['beatFactions']))))
         if 'results' in factions:
             for faction in factions['results']:
-                utils.queue(disband, faction['_id'])
-            return 'factions: listed '+str(len(factions['results']))+' factions for disbanding'
+                utils.queue(update, faction['_id'])
+            return 'factions: listed '+str(len(factions['results']))+' faction(s) for updating'
         return 'factions: listing failed. No factions?'
-    utils.queue(list_disband)
+    utils.queue(list_update)
 
     # Spawn new factions with initial colony
     def spawn(n):
@@ -43,11 +58,18 @@ def main(tick, config, q):
         if int(occupied['hits']) == 0 or (planet[n]['size'] >= occupied['results'][0]['size'] + 2):
             utils.queue(cp.put, payload={
                 'object': 'faction',
-                'pref': {  # 0 prefers first, 1 prefers last, 0.5 is indifferent.
+                'flexibility': utils.dist_flat(config['flexibility']),
+                'pref': {  # preferred optimal ratio between two, 0 prefers first, 1 prefers last, 0.5 is balanced.
                     'population_industry': utils.dist_flat(config['population_industry']),
                     'pacific_militaristic': utils.dist_flat(config['pacific_militaristic']),
                     'defence_attack': utils.dist_flat(config['defence_attack']),
                     'growth_expand': utils.dist_flat(config['growth_expand']),
+                },
+                'approx': {
+                    'population_industry': 0.5,
+                    'pacific_militaristic': 0.5,
+                    'defence_attack': 0.5,
+                    'growth_expand': 0.5,
                 }},
                 params='[faction'+str(tick)+'-'+str(n)+']',
                 msg='factions: add faction'+str(tick)+'-'+str(n)

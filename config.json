@@ -6,7 +6,7 @@
 
     /***** Time stuff */
     "beatUniverse": 1000, /* [1;+inf], relative speed of Universe module to other modules */
-    "beatFactions": 1, /* [1;+inf], relative speed of Factions module to other modules */
+    "beatFactions": 100, /* [1;+inf], relative speed of Factions module to other modules */
     "beatEconomy": 1, /* [1;+inf], relative speed of Economy module to other modules */
     "beatConstruction": 1, /* [1;+inf], relative speed of Construction module to other modules */
     "beatShips": 1, /* [1;+inf], relative speed of Ships module to other modules */
@@ -59,6 +59,7 @@
     "initMetals": 100,
     "initIsotopes": 100,
     /* Preferences */
+    "flexibility": [0.25,0.25], /* flat, weight of deviation from prefences */
     "population_industry": [0.5,0.5], /* flat, At what ratio (weighted by habitability and richness) to keep industry */
     "pacific_militaristic": [0.5,0.5], /* flat, Size of warfleet to keep */
     "defence_attack": [0.5,0.5], /* flat, Ratio of created warships to dedicate for defence */
