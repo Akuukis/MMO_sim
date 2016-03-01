@@ -16,7 +16,11 @@ def main(tick, config, q):
                 SUM(population) AS population,\
                 SUM(industry) AS industry,\
                 SUM(storage.goods[goods]) AS goodsLocal,\
-                SUM(Object.keys(storage.goods).reduce(function(a,b){return a+(storage.goods[b]||0)},0)) AS goodsTotal\
+                SUM(Object.keys(storage.goods).reduce(function(a,b){return a+(storage.goods[b]||0)},0)) AS goodsTotal,\
+                SUM(storage['troops']) AS troops,\
+                SUM(storage['solids']) AS solids,\
+                SUM(storage['metals']) AS metals,\
+                SUM(storage['isotopes']) AS isotopes\
             FROM massive\
             WHERE object == 'colony' && faction == '" + _id + "'\
             GROUP BY object\
@@ -25,13 +29,51 @@ def main(tick, config, q):
             r = cp.query(payload="DELETE massive['" + _id + "']")['results'][0]['_id']
             return 'factions: disband faction ' + str(r)
         else:
+            troopsValue = config['troops'][0]+config['troops'][1]+config['troops'][2]+config['troops'][3]
             f = r['results'][0]
+            colonyValue = (config['popUpgradeGoods']+config['popUpgradeSolids']+config['indUpgradeGoods']+config['indUpgradeSolids'])/2
+            pacific = 1 + f['goodsTotal'] + f['solids'] + (f['population'] + f['industry']) * colonyValue
+            military = 1 + f['metals'] + f['isotopes'] + f['troops'] * troopsValue
+            defence = 1
+            offence = 1
+
+            r = cp.query(payload="\
+                SELECT\
+                    GROUP_KEY() AS type,\
+                    COUNT() AS count,\
+                    SUM(\
+                        cargo['solids']+\
+                        Object.keys(cargo.goods).reduce(function(a,b){return a+(cargo.goods[b]||0)},0)\
+                        ) AS cargoPacific,\
+                    SUM(\
+                        cargo['metals']+\
+                        cargo['isotopes']+\
+                        cargo['troops']*" + str(troopsValue) + "\
+                        ) AS cargoMilitary\
+                FROM massive\
+                WHERE object == 'ship' && faction == '" + _id + "'\
+                GROUP BY type\
+                LIMIT 0, 99")
             population_industry = f['population'] / (f['population'] + f['industry'])
             growth_expand = (f['population'] + f['industry'] - f['colonies']) / (f['population'] + f['industry'])
+            if int(r['hits']) > 0:
+                for ship in r['results']:
+                    s = config['ships'][ship['type']]
+                    pacific  += ship['cargoPacific']
+                    pacific  += ship['count'] * (s[0]+s[1]+s[2]+s[3]) * (s[8]+s[9*colonyValue]) / (s[5]+s[8]+s[9*colonyValue])
+                    military += ship['cargoMilitary']
+                    military += ship['count'] * (s[0]+s[1]+s[2]+s[3]) * (s[5])                  / (s[5]+s[8]+s[9*colonyValue])
+                    defence  += ship['count'] * s[4]
+                    offence  += ship['count'] * s[5]
+
             r = cp.query(payload="\
                 UPDATE massive['" + _id + "']\
                 SET approx['population_industry'] = "+str(population_industry)+",\
-                    approx['growth_expand'] = "+str(growth_expand)+"")['results'][0]['_id']
+                    approx['growth_expand'] = "+str(growth_expand)+",\
+                    approx['pacific_militaristic'] = "+str(pacific/(pacific+military))+",\
+                    approx['defence_offence'] = "+str(defence/(defence+offence))+",\
+                    approx['pacific'] = "+str(pacific)+",\
+                    approx['military'] = "+str(military)+"")['results'][0]['_id']
             return 'factions: update faction ' + str(r)
 
     def list_update():
@@ -62,14 +104,16 @@ def main(tick, config, q):
                 'pref': {  # preferred optimal ratio between two, 0 prefers first, 1 prefers last, 0.5 is balanced.
                     'population_industry': utils.dist_flat(config['population_industry']),
                     'pacific_militaristic': utils.dist_flat(config['pacific_militaristic']),
-                    'defence_attack': utils.dist_flat(config['defence_attack']),
+                    'defence_offence': utils.dist_flat(config['defence_offence']),
                     'growth_expand': utils.dist_flat(config['growth_expand']),
                 },
                 'approx': {
                     'population_industry': 0.5,
-                    'pacific_militaristic': 0.5,
-                    'defence_attack': 0.5,
+                    'pacific_militaristic': 0.99,
+                    'defence_offence': 0.5,
                     'growth_expand': 0.5,
+                    'pacific': (config['initPop']+config['initInd'])*1000 + config['initGoodsLocal'] + config['initGoodsGenesis'] + config['initSolids'],
+                    'military': config['initMetals'] + config['initIsotopes'],
                 }},
                 params='[faction'+str(tick)+'-'+str(n)+']',
                 msg='factions: add faction'+str(tick)+'-'+str(n)

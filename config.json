@@ -61,8 +61,8 @@
     /* Preferences */
     "flexibility": [0.25,0.25], /* flat, weight of deviation from prefences */
     "population_industry": [0.5,0.5], /* flat, At what ratio (weighted by habitability and richness) to keep industry */
-    "pacific_militaristic": [0.5,0.5], /* flat, Size of warfleet to keep */
-    "defence_attack": [0.5,0.5], /* flat, Ratio of created warships to dedicate for defence */
+    "pacific_militaristic": [0.5,0.5], /* flat, ratio of pacific capital (traders+colonies) versus military capital */
+    "defence_offence": [0.5,0.5], /* flat, Ratio of created warships to dedicate for defence */
     "growth_expand": [0.5,0.5], /*  flat, At what % of optimalPopulation to grow further or create settler */
 
     /***** Economy */
@@ -81,9 +81,24 @@
     "popUpgradeGoods": 1000,
     "popUpgradeSolids": 1000,
     "popDowngradeRefund": 0.5,
+
     "indUpgradeGoods": 1000,
     "indUpgradeSolids": 1000,
     "indDowngradeRefund": 0.5,
+
+    /* Troops */
+    /* name:  [goods,solids,metals,isotopes, def, atk,    size] */
+    "troops": [   10,    10,    10,      10,  10,  10,      10],
+
+    /* Ship costs & properties */
+    "ships": {
+        /* name:    [goods,solids,metals,isotopes, def, atk,   km/t,ly/t,cargo,colony] */
+        "colonist": [ 1000,  1100,    10,      10,  50,   5,      1,   1,    0,     1],
+        "trader":   [   10,   100,    10,      10,  50,   5,      1,   1,  100,     0],
+        "hauler":   [   10,   900,    10,      10,  30,   5,      1,   1, 1000,     0],
+        "striker":  [   10,    10,    50,     100,  40, 100,      2,   1,    0,     0],
+        "frigate":  [   10,    10,   100,      50, 100,  40,      2,   1,    0,     0]
+    },
 
 
     /* TODO */
