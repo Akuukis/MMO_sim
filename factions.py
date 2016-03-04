@@ -1,5 +1,5 @@
 import re
-from pprintpp import pprint as pp
+# from pprintpp import pprint as pp
 
 import cp
 import utils
@@ -39,7 +39,7 @@ def main(tick, config, q):
 
             r = cp.query(payload="\
                 SELECT\
-                    GROUP_KEY() AS type,\
+                    GROUP_KEY()[0] AS type,\
                     COUNT() AS count,\
                     SUM(\
                         cargo['solids']+\
@@ -60,9 +60,9 @@ def main(tick, config, q):
                 for ship in r['results']:
                     s = config['ships'][ship['type']]
                     pacific  += ship['cargoPacific']
-                    pacific  += ship['count'] * (s[0]+s[1]+s[2]+s[3]) * (s[8]+s[9*colonyValue]) / (s[5]+s[8]+s[9*colonyValue])
+                    pacific  += ship['count'] * (s[0]+s[1]+s[2]+s[3]) * (s[8]+s[9]*colonyValue) / (s[5]+s[8]+s[9]*colonyValue)
                     military += ship['cargoMilitary']
-                    military += ship['count'] * (s[0]+s[1]+s[2]+s[3]) * (s[5])                  / (s[5]+s[8]+s[9*colonyValue])
+                    military += ship['count'] * (s[0]+s[1]+s[2]+s[3]) * (s[5])                  / (s[5]+s[8]+s[9]*colonyValue)
                     defence  += ship['count'] * s[4]
                     offence  += ship['count'] * s[5]
 
