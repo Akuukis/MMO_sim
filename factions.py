@@ -91,13 +91,13 @@ def main(tick, config, q):
     utils.queue(list_update)
 
     # Spawn new factions with initial colony
-    def spawn(n):
+    def spawn(planet, n):
         occupied = cp.query(payload="\
             SELECT SUM(population+industry) as size\
             FROM massive\
-            WHERE object == 'colony' && anchor == '"+planet[n]['_id']+"'\
+            WHERE object == 'colony' && anchor == '"+planet['_id']+"'\
             GROUP BY anchor")
-        if int(occupied['hits']) == 0 or (planet[n]['size'] >= occupied['results'][0]['size'] + 2):
+        if int(occupied['hits']) == 0 or (planet['size'] >= occupied['results'][0]['size'] + 2):
             utils.queue(cp.put, payload={
                 'object': 'faction',
                 'flexibility': utils.dist_flat(config['flexibility']),
@@ -121,24 +121,25 @@ def main(tick, config, q):
             utils.queue(cp.put, payload={
                 'object': 'colony',
                 'faction': 'faction'+str(tick)+'-'+str(n),
-                'anchor': planet[n]['_id'],
-                'goods': re.search("(\w*)p", planet[n]['_id']).group(1),
+                'anchor': planet['_id'],
+                'goods': re.search("(\w*)p", planet['_id']).group(1),
                 'untilJoins': {
-                    'size': planet[n]['size'],
-                    'habitability': planet[n]['habitability'],
-                    'richness': planet[n]['richness'],
-                    'materials': planet[n]['materials'],
+                    'size': planet['size'],
+                    'habitability': planet['habitability'],
+                    'richness': planet['richness'],
+                    'materials': planet['materials'],
                 },
                 'population': config['initPop'],
                 'industry': config['initInd'],
                 'storage': {
                     'goods': {
-                        re.search("(\w*)p", planet[n]['_id']).group(1): config['initGoodsLocal'],
+                        re.search("(\w*)p", planet['_id']).group(1): config['initGoodsLocal'],
                         'genesis': config['initGoodsGenesis'],
                     },
                     'solids': config['initSolids'],  # Upkeep for industry
                     'metals': config['initMetals'],  # For structure of skips
                     'isotopes': config['initIsotopes'],  # For guns of ships
+                    'troops': config['initTroops'],  # For defence and conquer
                     'ammo': 0  # For guns to shoot
                 }},
                 params='[colony'+str(tick)+'-'+str(tick)+'-'+str(n)+']',
@@ -147,7 +148,7 @@ def main(tick, config, q):
             return 'factions: spawn faction'+str(tick)+'-'+str(n)
 
     if want > count:
-        planet = cp.query(payload="\
+        planets = cp.query(payload="\
             SELECT _id, size, habitability, richness, materials\
             FROM massive\
             WHERE\
@@ -157,9 +158,9 @@ def main(tick, config, q):
                 system_coords.radius > "+str(int(config['optimalDistance'][0]/config['optimalDistance'][1]))+"\
             ORDER BY Math.abs("+str(config['optimalDistance'][0])+" - system_coords.radius) * Math.random()\
             LIMIT 0, "+str(max(1, round((want - count)/config['beatFactions'])))
-            )["results"]
-        for n in range(0, max(1, round((want - count)/config['beatFactions']))):
-            spawn(n)
+            )
+        for n in range(0, min(int(planets['hits']), max(1, round((want - count)/config['beatFactions'])))):
+            spawn(planets["results"][n], n)
 
     return 'done'
 

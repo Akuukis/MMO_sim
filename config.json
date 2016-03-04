@@ -58,6 +58,7 @@
     "initSolids": 100,
     "initMetals": 100,
     "initIsotopes": 100,
+    "initTroops": 10,
     /* Preferences */
     "flexibility": [0.25,0.25], /* flat, weight of deviation from prefences */
     "population_industry": [0.5,0.5], /* flat, At what ratio (weighted by habitability and richness) to keep industry */
