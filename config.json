@@ -89,9 +89,9 @@
 
     /*#### Performance and technical ########################################*/
 
-    "num_worker_threads": 5,
+    "num_worker_threads": 4,
     "cleanFactions": 50, /* Every x ticks check for empty factions */
-    "pauseTicks": 1,
+    "pauseTicks": 0,
 
     /* Don't touch :D */
     "__noCommaHere": true

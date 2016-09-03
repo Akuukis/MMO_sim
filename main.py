@@ -22,7 +22,7 @@ while True:
     # Get tick
     try:
         tick = cp.query(payload="SELECT COUNT() FROM massive WHERE object == 'tick' GROUP BY object LIMIT 0, 1")["results"][0]["COUNT()"]
-    except KeyError or TypeError:
+    except IndexError:
         tick = 0
 
     # Respawn workers

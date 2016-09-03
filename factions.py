@@ -25,7 +25,7 @@ def main(tick, config, q):
             FROM massive\
             WHERE object == 'faction'\
             ORDER BY Math.random()\
-            LIMIT 0,"+str(max(1, round(want/config['beatFactions']))))
+            LIMIT 0,"+str(max(1, round(want/config['cleanFactions']))))
         if 'results' in factions:
             for faction in factions['results']:
                 utils.queue(disband, faction['_id'])

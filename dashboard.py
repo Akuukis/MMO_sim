@@ -18,7 +18,7 @@ goods = cp.query(payload="\
       SUM(storage.metals) AS metals,\
       SUM(storage.isotopes) AS isotopes,\
       SUM(storage.goods[goods]) AS goodsLocal,\
-      SUM(Object.keys(storage.goods).reduce(function(a,b){return a+(storage['goods'][b] || 0)},0)) AS goodsAll\
+      SUM(Object.keys(storage.goods).reduce(function(a,b){return a+(Number(storage.goods[b]) || 0)},0)) AS goodsAll\
     FROM massive\
     WHERE object == 'colony'\
     GROUP BY object")['results'][0]
@@ -68,6 +68,6 @@ colonies = cp.query(payload="\
 
 print("               tick, length(tick): #%i, %.4fs"         % (objects['tick'], length))
 print(" [systems, stars, planets, moons]: [%i, %i, %i, %i]"   % (objects['system'], objects['star'], objects['planet'], objects['moon'], ))
-print("    [goodsAll, goodsLocal], ratio: [%.1f, %.1f], %.3f" % (goods['goodsAll']/objects['colony'], goods['goodsLocal']/objects['colony'], goods['goodsLocal']/goods['goodsAll']))
+print("[factions, coloniesAll, goodsAll]: [%i, %i, %i]"       % (objects['faction'], objects['colony'], goods['goodsAll']))
 print("       [solids, metals, isotopes]: [%.1f, %.1f, %.1f]" % (goods['solids']/objects['colony'], goods['metals']/objects['colony'], goods['isotopes']/objects['colony']))
-print("          [factions, coloniesAll]: [%i, %i]"           % (objects['faction'], objects['colony']))
+print("    [goodsAll, goodsLocal], ratio: [%.1f, %.1f], %.3f" % (goods['goodsAll']/objects['colony'], goods['goodsLocal']/objects['colony'], goods['goodsLocal']/goods['goodsAll']))
